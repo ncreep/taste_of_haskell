@@ -76,7 +76,7 @@ eof = Parser $ \s ->
     _ -> []
   
 -- match :: Parser String -> String -> [(String, String)]
-match p = nub . (parse $ p <* eof)
+match p = (map fst) . nub . (parse $ p <* eof)
 
 runParser (Parser p) s = 
   case map fst $ filter hasResult results of
@@ -105,6 +105,11 @@ data Grep =
   | And Grep Grep
   deriving (Eq, Show)
   
+joinGreps [] = Str ""
+joinGreps [g] = g
+joinGreps (g : gs) = And g $ joinGreps gs
+-- joinGreps = foldl (And) (Str "")
+  
 grepChar = Str <$> alphaNum
 grepString = Str <$> plus alphaNum
 grepDot = Dot <$ char '.'
@@ -117,15 +122,22 @@ grepOr = Or <$> notGrepOr <* char '|' <*> grep
 notGrepOr = joinGreps <$> some (grepString <|> grepDot <|> grepOneOf <|> grepNoneOf <|> grepStar <|> grepPlus)
 grep = grepOr <|> notGrepOr
 
--- grep :: Parser (Parser String)
--- grep = star $ grepString <|> grepDot <|> grepNoneOf <|> grepStar <|> grepPlus <|> grepOneOf <|> grepOr
--- grep = joinParsers <$> (some $ grepString <|> grepDot <|> grepOneOf <|> grepNoneOf<|> grepStar <|> grepPlus )-- <|> grepOr)
--- grep = joinGreps <$> (some grep1)
+grepToParser grep = case grep of
+  Str s -> string s
+  Dot -> dot
+  OneOf cs -> oneOf cs
+  NoneOf cs -> noneOf cs
+  Star g -> star $ grepToParser g
+  Plus g -> plus $ grepToParser g
+  Or g1 g2 -> grepToParser g1 <|> grepToParser g2
+  And g1 g2 -> grepToParser g1 & grepToParser g2
 
-joinGreps [] = Str ""
-joinGreps [g] = g
-joinGreps (g : gs) = And g $ joinGreps gs
--- joinGreps = foldl (And) (Str "")
+toGrep s = case match grep s of
+  [] -> empty
+  p : _ -> grepToParser p
+
+matchGrep = match . toGrep
+matches g = not . null . (matchGrep g)
 {-
 grepString = string <$> plus alphaNum
 grepDot = dot <$ char '.'
