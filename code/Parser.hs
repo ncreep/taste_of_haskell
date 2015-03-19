@@ -119,10 +119,10 @@ grepOneOf = OneOf <$> (char '[' *> plus alphaNum <* char ']')
 grepNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']')
 grepStar = Star <$> (grepDot <|> grepChar)  <* char '*'
 grepPlus = Plus <$> (grepDot <|> grepChar) <* char '+'
-grepOr = Or <$> notGrepOr <* char '|' <*> grep
+grepOr = Or <$> notGrepOr <* char '|' <*> grepParser
 
 notGrepOr = joinGreps <$> some (grepString <|> grepDot <|> grepOneOf <|> grepNoneOf <|> grepStar <|> grepPlus)
-grep = grepOr <|> notGrepOr
+grepParser = grepOr <|> notGrepOr
 
 grepToParser grep = case grep of
   Str s -> string s
@@ -134,12 +134,12 @@ grepToParser grep = case grep of
   Or g1 g2 -> grepToParser g1 <|> grepToParser g2
   And g1 g2 -> grepToParser g1 & grepToParser g2
 
-toGrep s = case match grep s of
+toGrep s = case match grepParser s of
   [] -> empty
   p : _ -> grepToParser p
 
-matchGrep = match . toGrep
-matches g = not . null . (matchGrep g)
+matchGrep = match . has . toGrep
+matches pattern = not . null . (matchGrep pattern)
 {-
 grepString = string <$> plus alphaNum
 grepDot = dot <$ char '.'
