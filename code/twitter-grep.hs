@@ -80,7 +80,7 @@ main = do
 startServer config = scotty 3000 $ do
   get "/grep-tweets/:user" $ do
     user <- S.param "user"
-    limit <- S.param "limit" `rescue`  \_ -> return 200
+    limit <- S.param "limit"
     pattern <- S.param "pattern"
     maybeTweets <- liftIO $ timeline config user limit
     
