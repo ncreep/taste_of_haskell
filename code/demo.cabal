@@ -5,7 +5,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable demo
-  main-is:             twitter_feed.hs
+  main-is:             twitter-grep.hs
 
   build-depends:       base >=4.7 && <4.8
                      , scotty
