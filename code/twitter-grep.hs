@@ -21,7 +21,7 @@ import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
 import Text.Blaze.Html.Renderer.Text
 
-import Parser
+import Grep
 
 {-
 A server application that can do grep-like functionality to a Twitter timeline.
