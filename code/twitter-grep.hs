@@ -30,6 +30,12 @@ same directory that contains the credentials for the Twitter API (see the Config
 
 The application can be used as follows:
 http://localhost:3000/grep-tweets/Hackage?limit=20&pattern=[Ss]ome|sim.le|pa[^abc]ttern
+
+Inspired by:
+https://www.fpcomplete.com/school/starting-with-haskell/libraries-and-frameworks/text-manipulation/json
+https://github.com/skopjehacklab/twitter-feed
+http://adit.io/posts/2013-04-15-making-a-website-with-haskell.html
+http://www.colourcoding.net/blog/archive/2015/02/22/hello-world-web-application-in-haskell.aspx
 -}
 
 -- The data that we'll be using for a single tweet

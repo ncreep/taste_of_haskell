@@ -6,6 +6,11 @@ import Data.List
 
 {-
 A simple applicative parser implementation. Using the combinators to construct a small grep-like language.
+
+Inspired by:
+http://dev.stephendiehl.com/fun/002_parsers.html
+https://github.com/Gabriel439/Haskell-Turtle-Library/blob/45219bc99141fe956bc00f73f151460449f89376/src/Turtle/Pattern.hs
+https://gist.github.com/willtim/660454
 -}
  
 -- A parser for a string of characters
