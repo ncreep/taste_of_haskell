@@ -16,8 +16,8 @@ window.twttr = (function(d, s, id) {
 }(document, "script", "twitter-wjs"));
 
 window.addEventListener('load', function(){
-     var tweets = document.getElementsByClassName("tweet");
-   Array.prototype.forEach.call(tweets, function(t) {
-     twttr.widgets.createTweet(t.id, t)
-   })
+  var tweets = document.getElementsByClassName("tweet");
+  Array.prototype.forEach.call(tweets, function(t) {
+    twttr.widgets.createTweet(t.id, t)
+  })
 });
