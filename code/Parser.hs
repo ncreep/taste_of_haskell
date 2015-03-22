@@ -3,8 +3,15 @@ module Parser where
 import Control.Applicative
 import Data.Char
 import Data.List
+
+{-
+A simple applicative parser implementation. Using the combinators to construct a small grep-like language.
+-}
  
+-- A parser for a string of characters
 newtype Parser a = Parser { parse :: String -> [(a, String)] }
+
+-- Note: cannot put type signatures in typeclass instances since this creates a duplicate signature
 
 instance Functor Parser where
   -- fmap :: (a -> b) -> Parser a -> Parser b
@@ -25,74 +32,67 @@ instance Alternative Parser where
 
   Parser pa <|> Parser pb = Parser $ \s -> pa s ++ pb s
 
-
--- satisfy :: (Char -> Bool) -> Parser String
+-- Checks whether the current character in the stream matches the given predicate
+satisfy :: (Char -> Bool) -> Parser String
 satisfy predicate = Parser $ \s ->
   case s of
-    [] -> []
+    []     -> []
     (c:cs) -> 
       if predicate c
       then [([c], cs)]
       else []
+
+-- Matches any character
+dot :: Parser String
+dot = satisfy $ const True
  
--- char :: Char -> Parser String
+-- Matches the given character
+char :: Char -> Parser String
 char c = satisfy (c ==)
 
+-- Matches any alphanumeric character
+alphaNum :: Parser String
+alphaNum = satisfy isAlphaNum
+
+-- oneOf - matches any of the given character, noneOf - matches non of the given characters
+oneOf, noneOf :: [Char] -> Parser String
+oneOf cs = satisfy $ \c -> elem c cs
+noneOf cs = satisfy $ \c -> notElem c cs
+
 infixr 0 &
+-- Runs both parsers and concatenates their results
 (&) :: Parser String -> Parser String -> Parser String
 (&) pa pb = (++) <$> pa <*> pb
 
+-- Matches the given string
 string :: String -> Parser String
-string "" = pure ""
--- string (c:cs) = char c <> string cs
+string ""     = pure ""
 string (c:cs) = char c & string cs
 
-dot :: Parser String
-dot = satisfy $ const True
-
--- oneOf :: [Char] -> Parser String
-oneOf cs = satisfy $ \c -> elem c cs
-
--- noneOf :: [Char] -> Parser String
-noneOf cs = satisfy $ \c -> notElem c cs
-
-opt :: Char -> Parser String
-opt c = string [c] <|> pure ""
-
--- star :: Parser String -> Parser String
+-- star - matches the given parser 0 or more times, plus - matches 1 or more times
+star, plus :: Parser String -> Parser String
 star p = concat <$> many p
+plus p = concat <$> some p
 
--- plus :: Parser String -> Parser String
-plus p =  concat <$> some p
-
-has :: Parser a -> Parser a
+-- Checks whether the given parser matches anywhere inside a string
+-- The signature can be generalized to: has :: Parser a -> Parser a
+has :: Parser String -> Parser String
 has p = star dot *> p <* star dot
 
+-- Tests whether the parser reached the end of the stream
 eof :: Parser ()
 eof = Parser $ \s ->
   case s of
     "" -> [((), "")]
-    _ -> []
+    _  -> []
   
--- match :: Parser String -> String -> [(String, String)]
+-- Tries to match the given parser till then end of the string, if successful, returning the first results
+match :: Eq a => Parser a -> String -> [a]
 match p = (map fst) . nub . (parse $ p <* eof)
 
-runParser (Parser p) s = 
-  case map fst $ filter hasResult results of
-    [res] -> res
-    [] -> error "No results"
-    _ -> error "More than one parse result"
-    where results = p s
-          hasResult (a, []) = True
-          hasResult (a, _) = False
-          
-runParser' (Parser p) s = map fst $ filter hasResult results
-    where results = p s
-          hasResult (a, []) = True
-          hasResult (a, _) = False
 
-alphaNum = satisfy isAlphaNum
-
+-- A datatype describing a simplified version of grep
+-- Not completely accurate (e.g. Star should take only single characters or Dots), this can be improved using GADTs
 data Grep = 
     Str String 
   | Dot
@@ -103,58 +103,50 @@ data Grep =
   | Or Grep Grep
   | And Grep Grep
   deriving (Eq, Show)
-  
-joinGreps [] = Str ""
-joinGreps [g] = g
-joinGreps (g : gs) = And g $ joinGreps gs
--- joinGreps = foldl (And) (Str "")
-  
-grepChar = Str <$> alphaNum
-grepString = Str <$> plus alphaNum
-grepDot = Dot <$ char '.'
-grepOneOf = OneOf <$> (char '[' *> plus alphaNum <* char ']')
-grepNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']')
-grepStar = Star <$> (grepDot <|> grepChar)  <* char '*'
-grepPlus = Plus <$> (grepDot <|> grepChar) <* char '+'
-grepOr = Or <$> notGrepOr <* char '|' <*> grepParser
-
-notGrepOr = joinGreps <$> some (grepString <|> grepDot <|> grepOneOf <|> grepNoneOf <|> grepStar <|> grepPlus)
-grepParser = grepOr <|> notGrepOr
-
+ 
+-- Converts a Grep value into a corresponding Parser 
 grepToParser grep = case grep of
-  Str s -> string s
-  Dot -> dot
-  OneOf cs -> oneOf cs
+  Str s     -> string s
+  Dot       -> dot
+  OneOf cs  -> oneOf cs
   NoneOf cs -> noneOf cs
-  Star g -> star $ grepToParser g
-  Plus g -> plus $ grepToParser g
-  Or g1 g2 -> grepToParser g1 <|> grepToParser g2
+  Star g    -> star $ grepToParser g
+  Plus g    -> plus $ grepToParser g
+  Or g1 g2  -> grepToParser g1 <|> grepToParser g2
   And g1 g2 -> grepToParser g1 & grepToParser g2
 
+-- Using Ands to join a list of Greps into a single Grep
+andGreps :: [Grep] -> Grep
+andGreps []       = Str ""
+andGreps [g]      = g
+andGreps (g : gs) = And g $ andGreps gs
+
+-- Parsers for the various cases of Grep
+grepChar   = Str <$> alphaNum
+grepString = Str <$> plus alphaNum
+grepDot    = Dot <$ char '.'
+grepOneOf  = OneOf <$> (char '[' *> plus alphaNum <* char ']') -- syntax: [abc]
+grepNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']') -- syntax: [^abc]
+grepStar   = Star <$> (grepDot <|> grepChar)  <* char '*' -- syntax: a*
+grepPlus   = Plus <$> (grepDot <|> grepChar) <* char '+' -- syntax: a+
+grepOr     = Or <$> notGrepOr <* char '|' <*> grepParser -- syntax: abc*|[abc]a|.*
+-- since Or should have a low precedence, first trying to match as many non-Or values as possible
+
+-- A single parser for everything that is not an Or parser
+notGrepOr = andGreps <$> some (grepString <|> grepDot <|> grepOneOf <|> grepNoneOf <|> grepStar <|> grepPlus)
+-- The full parser for Grep expressions
+grepParser = grepOr <|> notGrepOr
+
+-- Converts a grep-like string into a Parser
+toGrep :: String -> Parser String
 toGrep s = case match grepParser s of
   [] -> empty
   p : _ -> grepToParser p
 
+-- Takes a grep-like string tries to match it anywhere in another another string, yielding a list of results
+matchGrep :: String -> String -> [String]
 matchGrep = match . has . toGrep
+
+-- Takes a grep-like string and a target string and return True if there is a match
+matches :: String -> String -> Bool
 matches pattern = not . null . (matchGrep pattern)
-{-
-grepString = string <$> plus alphaNum
-grepDot = dot <$ char '.'
-grepOneOf = oneOf <$> (char '[' *> plus alphaNum <* char ']')
-grepNoneOf = noneOf <$> (string "[^" *> plus alphaNum <* char ']')
-grepStar = star <$> (grepDot <|> grepChar)  <* char '*'
-grepPlus = plus <$> (grepDot <|> grepChar) <* char '+'
-grepOr = (<|>) <$> notGrepOr <* char '|' <*> grep
-notGrepOr = grepString <|> grepDot <|> grepOneOf <|> grepNoneOf <|> grepStar <|> grepPlus
-
--- grep :: Parser (Parser String)
--- grep = star $ grepString <|> grepDot <|> grepNoneOf <|> grepStar <|> grepPlus <|> grepOneOf <|> grepOr
--- grep = joinParsers <$> (some $ grepString <|> grepDot <|> grepOneOf <|> grepNoneOf<|> grepStar <|> grepPlus )-- <|> grepOr)
-grep =  joinParsers <$> (many $ notGrepOr <|> grepOr) -- )
-
-joinParsers :: [Parser String] -> Parser String
-joinParsers = foldl (&) (pure "")
--}
-
--- toGrep :: String -> Parser String
--- toGrep s = 
