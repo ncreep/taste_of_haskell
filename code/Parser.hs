@@ -91,9 +91,11 @@ eof = Parser $ \s ->
     "" -> [((), "")]
     _  -> []
   
--- Tries to match the given parser till then end of the string, if successful, returning the first results
+-- Tries to match the given parser till then end of the string, if successful, returning a list of results
 match :: Eq a => Parser a -> String -> [a]
-match p = (map fst) . nub . (parse $ p <* eof)
+match p str = map fst noDupsRes
+  where noDupsRes = nub parseRes
+        parseRes = parse (p <* eof) str
 
 
 -- A datatype describing a simplified version of grep
@@ -146,12 +148,10 @@ grepParser = grepOr <|> notGrepOr
 toGrep :: String -> Parser String
 toGrep s = case match grepParser s of
   [] -> empty
-  p : _ -> grepToParser p
-
--- Takes a grep-like string tries to match it anywhere in another another string, yielding a list of results
-matchGrep :: String -> String -> [String]
-matchGrep = match . has . toGrep
+  p : _ -> grepToParser p -- taking the first result
 
 -- Takes a grep-like string and a target string and return True if there is a match
 matches :: String -> String -> Bool
-matches pattern = not . null . (matchGrep pattern)
+matches grepStr target = not $ null matches
+  where matches = match (has grep) target
+        grep = toGrep grepStr
