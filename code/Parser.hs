@@ -64,7 +64,7 @@ oneOf, noneOf :: [Char] -> Parser String
 oneOf cs = satisfy $ \c -> elem c cs
 noneOf cs = satisfy $ \c -> notElem c cs
 
-infixr 0 &
+infixr 6 &
 -- Runs both parsers and concatenates their results
 (&) :: Parser String -> Parser String -> Parser String
 (&) pa pb = (++) <$> pa <*> pb
