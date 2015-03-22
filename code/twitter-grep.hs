@@ -26,7 +26,7 @@ import Parser
 {-
 A server application that can do grep-like functionality to a Twitter timeline.
 Upon start-up, the application assumes the presence of a 'config.json' file in the
-same directory that contains the credentials for the Twitter API (see the Config record).
+same directory that contains the credentials for the Twitter API (see the `Config` record).
 
 The application can be used as follows:
 http://localhost:3000/grep-tweets/Hackage?limit=20&pattern=[Ss]ome|sim.le|pa[^abc]ttern

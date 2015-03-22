@@ -99,7 +99,7 @@ match p str = map fst noDupsRes
 
 
 -- A datatype describing a simplified version of grep
--- Not completely accurate (e.g. Star should take only single characters or Dots), this can be improved using GADTs
+-- Not completely accurate (e.g. `Star` should take only single characters or `Dot`s), this can be improved using GADTs
 data Grep = 
     Str String 
   | Dot
@@ -111,7 +111,7 @@ data Grep =
   | And Grep Grep
   deriving (Eq, Show)
  
--- Converts a Grep value into a corresponding Parser 
+-- Converts a `Grep` value into a corresponding `Parser`
 grepToParser grep = case grep of
   Str s     -> string s
   Dot       -> dot
@@ -122,7 +122,7 @@ grepToParser grep = case grep of
   Or g1 g2  -> grepToParser g1 <|> grepToParser g2
   And g1 g2 -> grepToParser g1 & grepToParser g2
 
--- Using Ands to join a list of Greps into a single Grep
+-- Using `And`s to join a list of Greps into a single Grep
 andGreps :: [Grep] -> Grep
 andGreps []       = Str ""
 andGreps [g]      = g
@@ -137,20 +137,20 @@ grepNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']') -- syntax: [^
 grepStar   = Star <$> (grepDot <|> grepChar)  <* char '*' -- syntax: a*
 grepPlus   = Plus <$> (grepDot <|> grepChar) <* char '+' -- syntax: a+
 grepOr     = Or <$> notGrepOr <* char '|' <*> grepParser -- syntax: abc*|[abc]a|.*
--- since Or should have a low precedence, first trying to match as many non-Or values as possible
+-- since `Or` should have low precedence, first trying to match as many non-`Or` values as possible
 
--- A single parser for everything that is not an Or parser
+-- A single parser for everything that is not an `Or` parser
 notGrepOr = andGreps <$> some (grepString <|> grepDot <|> grepOneOf <|> grepNoneOf <|> grepStar <|> grepPlus)
 -- The full parser for Grep expressions
 grepParser = grepOr <|> notGrepOr
 
--- Converts a grep-like string into a Parser
+-- Converts a grep-like string into a `Parser`
 toGrep :: String -> Parser String
-toGrep s = case match grepParser s of
-  [] -> empty
-  p : _ -> grepToParser p -- taking the first result
+toGrep grepStr = case match grepParser grepStr of
+  []       -> empty
+  grep : _ -> grepToParser grep -- taking the first result
 
--- Takes a grep-like string and a target string and return True if there is a match
+-- Takes a grep-like string and a target string and return `True` if there is a match
 matches :: String -> String -> Bool
 matches grepStr target = not $ null matches
   where matches = match (has grep) target
