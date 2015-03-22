@@ -1,4 +1,3 @@
-{-# LANGUAGE GADTs #-}
 module Parser where
 
 import Control.Applicative
@@ -33,7 +32,7 @@ satisfy predicate = Parser $ \s ->
     [] -> []
     (c:cs) -> 
       if predicate c
-      then [(c, cs)]
+      then [([c], cs)]
       else []
  
 -- char :: Char -> Parser String
@@ -43,13 +42,12 @@ infixr 0 &
 (&) :: Parser String -> Parser String -> Parser String
 (&) pa pb = (++) <$> pa <*> pb
 
-asStr c = [c]
-
 string :: String -> Parser String
 string "" = pure ""
-string (c:cs) = asStr <$> char c & string cs
+-- string (c:cs) = char c <> string cs
+string (c:cs) = char c & string cs
 
--- dot :: Parser String
+dot :: Parser String
 dot = satisfy $ const True
 
 -- oneOf :: [Char] -> Parser String
@@ -62,14 +60,12 @@ opt :: Char -> Parser String
 opt c = string [c] <|> pure ""
 
 -- star :: Parser String -> Parser String
-star = many
--- star p = concat <$> many p
+star p = concat <$> many p
 
 -- plus :: Parser String -> Parser String
-plus =  some
--- plus p =  concat <$> some p
+plus p =  concat <$> some p
 
--- has :: Parser a -> Parser a
+has :: Parser a -> Parser a
 has p = star dot *> p <* star dot
 
 eof :: Parser ()
@@ -97,16 +93,15 @@ runParser' (Parser p) s = map fst $ filter hasResult results
 
 alphaNum = satisfy isAlphaNum
 
-data Grep a where
-  Chr :: Char -> Grep Char
-  Str :: String  -> Grep String
-  Dot :: Grep Char
-  OneOf :: [Char] -> Grep Char
-  NoneOf :: [Char] -> Grep Char
-  Star :: Grep Char -> Grep String
-  Plus :: Grep Char -> Grep String
-  Or :: Grep String -> Grep String -> Grep String
-  And :: Grep String -> Grep String -> Grep String
+data Grep = 
+    Str String 
+  | Dot
+  | OneOf [Char] 
+  | NoneOf [Char] 
+  | Star Grep 
+  | Plus Grep 
+  | Or Grep Grep
+  | And Grep Grep
   deriving (Eq, Show)
   
 joinGreps [] = Str ""
@@ -114,7 +109,7 @@ joinGreps [g] = g
 joinGreps (g : gs) = And g $ joinGreps gs
 -- joinGreps = foldl (And) (Str "")
   
-grepChar = Chr <$> alphaNum
+grepChar = Str <$> alphaNum
 grepString = Str <$> plus alphaNum
 grepDot = Dot <$ char '.'
 grepOneOf = OneOf <$> (char '[' *> plus alphaNum <* char ']')
@@ -126,13 +121,11 @@ grepOr = Or <$> notGrepOr <* char '|' <*> grepParser
 notGrepOr = joinGreps <$> some (grepString <|> grepDot <|> grepOneOf <|> grepNoneOf <|> grepStar <|> grepPlus)
 grepParser = grepOr <|> notGrepOr
 
-grepToParser :: Grep a -> Parser a
 grepToParser grep = case grep of
-  Chr c -> asStr <$> char c
   Str s -> string s
-  Dot -> asStr <$> dot
-  OneOf cs -> asStr <$> oneOf cs
-  NoneOf cs -> asStr <$> noneOf cs
+  Dot -> dot
+  OneOf cs -> oneOf cs
+  NoneOf cs -> noneOf cs
   Star g -> star $ grepToParser g
   Plus g -> plus $ grepToParser g
   Or g1 g2 -> grepToParser g1 <|> grepToParser g2
