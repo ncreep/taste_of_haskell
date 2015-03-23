@@ -95,6 +95,7 @@ htmlTemplate tweets = docTypeHtml $ do
 {- IO functions -}
 
 -- Fetches the Twitter timeline for the given user, using the Twitter API
+-- Note that the Twitter API provides at most 200 entries in the result set
 timeline :: Config -> String -> Int -> IO (Maybe [Tweet])
 timeline config user limit = do
   req       <- parseUrl $ feedUrl user limit

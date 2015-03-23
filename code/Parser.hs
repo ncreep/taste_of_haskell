@@ -35,6 +35,8 @@ instance Applicative Parser where
 instance Alternative Parser where
   empty = Parser $ \s -> []
 
+  -- Creates a new parser that runs both parsers in parallel and concatenates the
+  -- alternative parsings, this provides backtracking when there are multiple alternatives
   Parser pa <|> Parser pb = Parser $ \s -> pa s ++ pb s
 
 -- Checks whether the current character in the stream matches the given predicate
@@ -65,7 +67,7 @@ oneOf cs = satisfy $ \c -> elem c cs
 noneOf cs = satisfy $ \c -> notElem c cs
 
 infixr 6 &
--- Runs both parsers and concatenates their results
+-- Runs both parsers sequentially and concatenates their outputs
 (&) :: Parser String -> Parser String -> Parser String
 (&) pa pb = (++) <$> pa <*> pb
 

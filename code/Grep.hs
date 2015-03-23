@@ -32,19 +32,19 @@ grepToParser grep = case grep of
   Or g1 g2  -> grepToParser g1 <|> grepToParser g2
   And g1 g2 -> grepToParser g1 & grepToParser g2
 
--- Using `And`s to join a list of Greps into a single Grep
+-- Using `And`s to join a list of `Grep`s into a single `Grep`
 andGreps :: [Grep] -> Grep
 andGreps []       = Str ""
 andGreps [g]      = g
 andGreps (g : gs) = And g $ andGreps gs
 
--- Parsers for the various cases of Grep
+-- Parsers for the various cases of `Grep`
 grepChar   = Str <$> alphaNum
 grepString = Str <$> plus alphaNum
 grepDot    = Dot <$ char '.'
 grepOneOf  = OneOf <$> (char '[' *> plus alphaNum <* char ']') -- syntax: [abc]
 grepNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']') -- syntax: [^abc]
-grepStar   = Star <$> (grepDot <|> grepChar)  <* char '*' -- syntax: a*
+grepStar   = Star <$> (grepDot <|> grepChar) <* char '*' -- syntax: a*
 grepPlus   = Plus <$> (grepDot <|> grepChar) <* char '+' -- syntax: a+
 grepOr     = Or <$> notGrepOr <* char '|' <*> grepParser -- syntax: abc*|[abc]a|.*
 -- since `Or` should have low precedence, first trying to match as many non-`Or` values as possible
@@ -52,7 +52,7 @@ grepOr     = Or <$> notGrepOr <* char '|' <*> grepParser -- syntax: abc*|[abc]a|
 -- A single parser for everything that is not an `Or` parser, parsing as many occurrences as possible 
 notGrepOr = andGreps <$> some (grepString <|> grepDot <|> grepOneOf <|> grepNoneOf <|> grepStar <|> grepPlus)
 
--- The full parser for Grep expressions
+-- The full parser for `Grep` expressions
 grepParser = grepOr <|> notGrepOr
 
 -- Converts a grep-like string into a `Parser`
