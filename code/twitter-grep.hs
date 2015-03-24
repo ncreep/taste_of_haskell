@@ -31,6 +31,8 @@ same directory that contains the credentials for the Twitter API (see the `Confi
 The application can be used as follows:
 http://localhost:3000/grep-tweets/Hackage?limit=20&pattern=[Ss]ome|sim.le|pa[^abc]ttern
 
+Note that this fetches at most 200 tweets from the user's timeline
+
 Inspired by:
 https://www.fpcomplete.com/school/starting-with-haskell/libraries-and-frameworks/text-manipulation/json
 https://github.com/skopjehacklab/twitter-feed
@@ -58,23 +60,27 @@ data Config = Config { accessToken :: String
 instance FromJSON Config
 instance ToJSON Config
 
+{- Pure functions -}
+
 -- Creating credentials from the configuration data
+credential :: Config -> Credential
 credential config = 
   newCredential (pack $ accessToken config) (pack $ accessTokenSecret config)
 
 -- Creating an OAuth value from the configuration data
+oauth :: Config -> OAuth
 oauth config = newOAuth { oauthServerName     = "api.twitter.com"
                         , oauthConsumerKey    = pack $ consumerKey config
                         , oauthConsumerSecret = pack $ consumerSecret config
                         }
                         
-{- Pure functions -}
                       
 -- Does a grep on the text of a list of tweets, return a list with only the matched tweets
 grepTweets :: String -> [Tweet] -> [Tweet]          
 grepTweets pattern = filter $ (matches pattern) . text 
 
 -- Generating the Twitter feed url for the given user and tweets limit
+feedUrl :: [Char] -> Int -> [Char]
 feedUrl user limit = 
      "https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=" 
   ++ user
@@ -105,12 +111,13 @@ timeline config user limit = do
   return $ decode body
 
 -- Starting the server for the application.
+startServer :: Config -> IO ()
 startServer config = scotty 3000 $ do
   -- The main path for the application, applying grep to a user's timeline
   get "/grep-tweets/:user" $ do
-    user <- S.param "user"
-    limit <- S.param "limit"
-    pattern <- S.param "pattern"
+    user        <- S.param "user"
+    limit       <- S.param "limit"
+    pattern     <- S.param "pattern"
     maybeTweets <- liftIO $ timeline config user limit
     
     let response = case maybeTweets of

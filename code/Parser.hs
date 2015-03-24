@@ -48,15 +48,15 @@ satisfy predicate = Parser $ \s ->
       if predicate c
       then [([c], cs)]
       else []
+      
+-- Matches the given character
+char :: Char -> Parser String
+char c = satisfy (c ==)
 
 -- Matches any character
 dot :: Parser String
 dot = satisfy $ const True
  
--- Matches the given character
-char :: Char -> Parser String
-char c = satisfy (c ==)
-
 -- Matches any alphanumeric character
 alphaNum :: Parser String
 alphaNum = satisfy isAlphaNum
