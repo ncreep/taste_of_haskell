@@ -107,7 +107,7 @@ instance Functor Maybe where
   fmap f (Just x) = Just $ f x
   fmap _ Nothing = Nothing
  
-addWorld :: Functor f => f [Char] -> f [Char] 
+addWorld :: Functor f => f String -> f String 
 addWorld fs = fmap (++ " World!") fs
 
 addedWorld = addWorld $ Just "Hello" -- Just "Hello World!"
