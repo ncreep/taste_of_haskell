@@ -237,33 +237,11 @@ mapPlusTwo' = map (+ 2)
 - The parenthesis partially applies the `+` operator
 - And we can apply `mapPlusTwo` to a list and get the expected result
 - Let's move on to some more syntax
+- We've seen a number of operators thus far, Haskell actually lets us define operators on our own
 --
 
 mapPlusTwo [1, 2, 3] -- [3, 4, 5]
 
----
-
-```
-validLogin name pass = 
-  let validName = length name > 2
-      validPass = length pass > 8
-  in validName && validPass
-  
-{{content}}
-```
-???
-- This way we can have local definitions
-- Another way, which sometimes looks nicer, is this
---
-validLogin' name pass = validName && validPass
-  where validName = length name > 2
-        validPass = length pass > 8
-
-???
-- Both are equivalent
-- Though `where` has some limitation on the place where it can appear
-- `let` is just an expression, and can appear in place of any expression
-- We've seen a number of operators thus far, Haskell actually lets us define operators on our own
 ---
 
 ```
