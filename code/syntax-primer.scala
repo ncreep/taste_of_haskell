@@ -3,6 +3,7 @@
 type User = String
 
 sealed trait TwitterAPI
+
 case class Timeline(user: User, count: Int) extends TwitterAPI
 case class StatusUpdate(user: User, status: String) extends TwitterAPI
 case class Search(query: String) extends TwitterAPI

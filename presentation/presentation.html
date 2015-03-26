@@ -327,6 +327,7 @@ data TwitterAPI = Timeline User Integer
 - This is done via typeclasses, which we'll discuss soon
 - Each case defines a constructor function, taking arguments of the specified types
 - They can be used as follows
+- We also get pattern matching for free (just like with case classes)
 --
 tl :: TwitterAPI
 tl = Timeline "foo" 15
@@ -337,61 +338,23 @@ update = StatusUpdate "foo" "like, whatever"
 search :: TwitterAPI
 search = Search "I dunno"
 
+
+{{content}}
 ???
 - Note that, unlike Scala, there is no subtyping here, so all values have the same type, `TwitterAPI`
-- Suppose that we have many fields, having only types for the fields may be confusing
-- For example, a more realistic `Search` action might look something like:
----
-```
-data SearchTwitter' = SearchTwitter' String String String Integer Integer
+- Another mechanism to create types is `newtype`
 
-{{content}}
-```
-
-???
-- Without adding more descriptive types, it's easy to confuse the different parameters
-- To avoid such situations, we can use the record syntax
---
-data SearchTwitter = SearchTwitter { query :: String
-                                   , lang :: String 
-                                   , locale :: String
-                                   , count :: Integer 
-                                   , sinceId :: Integer
-                                   } deriving (Eq, Show)
-                                   
-{{content}}
-???
-- We can use it like so:
-
---
-st = SearchTwitter { query = "I dunno"
-                   , lang = "en"
-                   , locale = "uk"
-                   , count = 50
-                   , sinceId = 123456 }
-
-{{content}}
-???
-- Each field introduces a new extractor function, for example:
---
-
-q = query st -- "I dunno"
-
-
-{{content}}
-???
-- The last mechanism to create types is `newtype`
 --
 newtype TweetId = TweetId { id :: Integer }
 
-
+{{content}}
 ???
 - This differs from a `data` declaration that we've seen before in that it allowed to have just a single field
 - Essentially it's just a wrapper around a value, which is used to tag it with a new type
 - Haskell optimizes this wrapper away at compile time
-- This can be useful when we want to add more type-safety like in `SearchTwitter` scenario above
-- `newtype`s can also become useful when defining typeclass instances
-- To which we'll proceed now
+- This can be useful when we want to add more type-safety like tagging the `User` type with a new type, and not just a synonym
+- In here we also get pattern matching for free, but also a function that unwraps the value
+- Let's move on to typeclasses
 - But first, a reminder of typeclasses in Scala
 - We can encode typeclasses in Scala in the following way
 - Suppose we want a `Functor` typeclass
