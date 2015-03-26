@@ -43,8 +43,8 @@ instance Alternative Parser where
 satisfy :: (Char -> Bool) -> Parser String
 satisfy predicate = Parser $ \s ->
   case s of
-    []     -> []
-    (c:cs) -> 
+    []   -> []
+    c:cs -> 
       if predicate c
       then [([c], cs)]
       else []
