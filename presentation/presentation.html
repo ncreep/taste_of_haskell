@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title> A Taste of Haskell for Scala Programmers</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel='stylesheet' type='text/css' href='style.css' />
+</head>
+<body>
+<textarea id="source">
+
+class: center, middle, transition, intro
+
+#  A Taste of Haskell for Scala Programmers
+
+.leftFloat[Underscore - TODO 2015]
+.rightFloat[Daniel Beskin]
+---
+
+class: center, middle, transition
+
+.xkcd[![](xkcd.png)]
+
+???
+- This talk will be about the language Haskell
+- Here's the obligatory XKCD comic
+- It's a common misconception that Haskell is this ivory tower language, that has no practical use
+- So to sort this point out
+
+---
+
+class: center, middle
+
+.bigCode[`main = putStrLn "Hello World!"`]
+
+???
+
+- This code does exactly what you'd expect
+- Which proves once and for all that Haskell really is a practical language
+
+---
+layout: true
+
+## What?
+
+---
+
+- Haskell is a standardized, general-purpose purely functional programming language, with non-strict semantics and strong static typing
+
+???
+- Although very accurate, it doesn't really convey the spirit of the language
+- It makes it more academic rather than a real programming language
+
+---
+
+- ~~Haskell is a standardized, general-purpose purely functional programming language, with non-strict semantics and strong static typing~~
+
+???
+- Let's try again
+
+--
+
+- Haskell is a programming language, you can Get Stuff Done&#8482; with it
+
+---
+layout: false
+
+## Why?
+
+- Influence on Scala
+
+- The "missing documentation" for Scalaz
+
+- Better suited for pure functional programming
+
+- A reading language
+
+
+???
+- There is quite a bit of influence Haskell on Scala, e.g. the type system or for comprehensions
+- Learning Haskell might improve one's understanding of these concepts in Scala
+- Many things in Scalaz are ports of similar Haskell code, learning Haskell can help with figuring out Scalaz 
+- For example, theres's a Haskell site called Typeclassopedia that can help with the Scalaz typeclass hierarchy
+- Since Haskell does not try to blend FP with OO, it's much better suited for pure FP than Scala
+- Sometimes it's easier to figure out some FP concept in Haskell and then port it to Scala, rather than trying to learn it directly in Scala
+- Because of the above, a lot of FP related advances (research or just blog posts) are being done in Haskell
+- Learning to read Haskell can open up a whole world of reading material on these topics
+
+---
+
+## How?
+
+We'll build a small server application that:
+
+- Accepts GET (@twitter-name, grep)
+
+- Fetches @twitter-name timeline
+
+- Filters timeline with grep expression
+
+- Serves an HTML page with results
+
+???
+
+- This is going to be an example driven tutorial
+- We'll try to build a "real world" application, with all sorts of side effects and things
+- So no Fibonacci
+- The aim is not to be a comprehensive introduction to Haskell, but rather to convey the feeling of programming in Haskell
+- Accepts GET requests with a Twitter user name and a grep-like expression
+- Fetches the user's Twitter timeline via the Twitter API
+- Filters out the tweets that do not match the grep expression
+- Produces an HTML page with the resulting tweets
+
+---
+layout: false
+class: center, middle, transition
+
+Haskell Syntax Primer
+
+.tweet-syntax[![](tweet_syntax.png)]
+
+???
+
+- But first, a quick tour of Haskell syntax
+- This by no means a full introduction to Haskell syntax
+- It should be enough that you'll be able to follow along with the examples we're going to see further down the road
+
+---
+
+```
+
+x = 3
+
+
+{{content}}
+```
+???
+- A Haskell program is made up of definitions
+- The simplest kind are just constants
+--
+y = 3 + x
+
+
+{{content}}
+--
+name = "Keyser Soze"
+
+
+{{content}}
+--
+addLists ls1 ls2 = ls1 ++ ls2
+
+
+{{content}}
+???
+- Next there are functions
+- Note that function arguments do not require parentheses
+--
+addLists [1, 2, 3] [4, 5] -- [1,2,3,4,5]
+
+
+{{content}}
+???
+- We apply functions by juxtaposition 
+- A double dash is a comment in Haskell
+--
+map f ls = case ls of
+  []  -> []
+  h:t -> f h : map f t
+ 
+
+{{content}}
+???
+- We can define the familiar `map` function
+- Haskell has built-in syntax for lists, and we can do pattern matching on using a `case` expression
+--
+map' f []    = []
+map' f (h:t) = f h : map' f t
+
+???
+- Another way of doing pattern matching, is by splitting the function definitions into the relevant cases
+- Both ways are equivalent
+- Apostrophe is a valid character in a Haskell identifier
+- So far, we didn't mention any types anywhere
+- This is possible, since unlike Scala, Haskell has *global* type inference
+- So it is almost always possible (but not always recommended) to omit type signatures and the compiler just infers it
+- If we actually let the compiler infer the types we get the following:
+---
+```
+x :: Integer
+x = 3
+
+y :: Integer
+y = 3 + x
+
+name :: [Char]
+name = "Keyser Soze"
+
+addLists :: [a] -> [a] -> [a]
+addLists ls1 ls2 = ls1 ++ ls2
+
+longList :: [Integer]
+longList = addLists [1, 2, 3] [4, 5] -- [1, 2, 3, 4, 5]
+
+map :: (a -> b) -> [a] -> [b]
+map f ls = case ls of
+  []  -> []
+  h:t -> f h : map f t
+ 
+map' :: (a -> b) -> [a] -> [b] 
+map' f []    = []
+map' f (h:t) = f h : map' f t
+```
+
+???
+- From which we can learn a number of things
+- Type signatures use a double colon and are written separately
+- The default Haskell strings are just lists of characters, and can be treated as such (`String` is just a synonym for `[Char]`)
+- Lower case letters in a type signature act as type parameters
+- From the signature of both `addLists` and `map` we see that the functions in Haskell are curried by default
+- This actually works very nicely with function application syntax
+- Let's see an example
+---
+
+```
+mapPlusTwo :: [Integer] -> [Integer]
+mapPlusTwo = map (\x -> x + 2)
+
+{{content}}
+```
+???
+- Here we apply `map` to its first argument
+- The slash syntax stands for an anonymous function
+- As we can see, this produces a new function, where we already used `map`'s first argument
+- There a nicer way to write the same thing
+--
+
+mapPlusTwo' = map (+ 2)
+
+{{content}}
+???
+- The parenthesis partially applies the `+` operator
+- And we can apply `mapPlusTwo` to a list and get the expected result
+- Let's move on to some more syntax
+--
+
+mapPlusTwo [1, 2, 3] -- [3, 4, 5]
+
+---
+
+```
+validLogin name pass = 
+  let validName = length name > 2
+      validPass = length pass > 8
+  in validName && validPass
+  
+{{content}}
+```
+???
+- This way we can have local definitions
+- Another way, which sometimes looks nicer, is this
+--
+validLogin' name pass = validName && validPass
+  where validName = length name > 2
+        validPass = length pass > 8
+
+???
+- Both are equivalent
+- Though `where` has some limitation on the place where it can appear
+- `let` is just an expression, and can appear in place of any expression
+- We've seen a number of operators thus far, Haskell actually lets us define operators on our own
+---
+
+```
+infixr 0 $
+($) :: (a -> b) -> a -> b 
+f $ x = f x
+  
+{{content}}
+```
+???
+- We can define custom operator in Haskell, just like any function
+- This also defines the associativity (right) and precedence (0, the lowest) for the operator
+- This is the function application operator, it's defined in Haskell Prelude (which is like Scala's Predef) and imported by default
+- It might seem useless, but because of its low precedence it allows us to save some parenthesis
+- Suppose we want to write:
+--
+map (+ 2) (filter (3 <) [1, 2, 3, 4, 5])
+
+{{content}}
+???
+- Here we are first filtering a list and then mapping it
+- With the application operator we can write:
+--
+map (+ 2) $ filter (3 <) [1, 2, 3, 4, 5] -- [6, 7]
+    
+---
+```
+notAlphaNum :: Char -> Bool
+notAlphaNum c = (not . isAlphaNum) c
+
+{{content}}
+```
+???
+- Another important operator is the function composition operator, a dot
+- It is also defined in the Prelude and available by default
+- We can use it like so
+- This definition can be rewritten without its argument:
+--
+notAlphaNum' :: Char -> Bool
+notAlphaNum' = not . isAlphaNum
+
+???
+- This is called point-free style, and sometimes it's clearer this way
+- This concludes the basic syntax
+- Let's move on to type definitions
+- There are a number of ways to define types in Haskell
+- But first let's start with a Scala example
+
+---
+```scala
+type User = String
+
+sealed trait TwitterAPI
+case class Timeline(user: User, count: Int) extends TwitterAPI
+case class StatusUpdate(user: User, status: String) extends TwitterAPI
+case class Search(query: String) extends TwitterAPI
+```
+???
+- This should be fairly familiar code
+- We have a type synonym and an algebraic data type
+- In this case this is a simplistic representation of the Twitter API
+- We have three cases, each corresponds to an action in the API
+- Each action takes some arguments
+- Now for the (sort of) equivalent Haskell code
+
+---
+```
+type User = String
+
+data TwitterAPI = Timeline User Integer 
+                | StatusUpdate User String 
+                | Search String 
+                deriving (Eq, Show)
+      
+      
+{{content}}
+```
+
+???
+- There's a lot less noise here
+- The `deriving` bit is optional, but is provides the Haskell equivalent of `toString` and `equals`
+- This is done via typeclasses, which we'll discuss soon
+- Each case defines a constructor function, taking arguments of the specified types
+- They can be used as follows
+--
+tl :: TwitterAPI
+tl = Timeline "foo" 15
+
+update :: TwitterAPI
+update = StatusUpdate "foo" "like, whatever"
+
+search :: TwitterAPI
+search = Search "I dunno"
+
+???
+- Note that, unlike Scala, there is no subtyping here, so all values have the same type, `TwitterAPI`
+- Suppose that we have many fields, having only types for the fields may be confusing
+- For example, a more realistic `Search` action might look something like:
+---
+```
+data SearchTwitter' = SearchTwitter' String String String Integer Integer
+
+{{content}}
+```
+
+???
+- Without adding more descriptive types, it's easy to confuse the different parameters
+- To avoid such situations, we can use the record syntax
+--
+data SearchTwitter = SearchTwitter { query :: String
+                                   , lang :: String 
+                                   , locale :: String
+                                   , count :: Integer 
+                                   , sinceId :: Integer
+                                   } deriving (Eq, Show)
+                                   
+{{content}}
+???
+- We can use it like so:
+
+--
+st = SearchTwitter { query = "I dunno"
+                   , lang = "en"
+                   , locale = "uk"
+                   , count = 50
+                   , sinceId = 123456 }
+
+{{content}}
+???
+- Each field introduces a new extractor function, for example:
+--
+
+q = query st -- "I dunno"
+
+
+{{content}}
+???
+- The last mechanism to create types is `newtype`
+--
+newtype TweetId = TweetId { id :: Integer }
+
+
+???
+- This differs from a `data` declaration that we've seen before in that it allowed to have just a single field
+- Essentially it's just a wrapper around a value, which is used to tag it with a new type
+- Haskell optimizes this wrapper away at compile time
+- This can be useful when we want to add more type-safety like in `SearchTwitter` scenario above
+- `newtype`s can also become useful when defining typeclass instances
+- To which we'll proceed now
+- But first, a reminder of typeclasses in Scala
+- We can encode typeclasses in Scala in the following way
+- Suppose we want a `Functor` typeclass
+---
+
+```scala
+trait Functor[F[_]] {
+  def map[A, B](fa: F[A])(f: A => B): F[B]
+}
+
+implicit val optionFunctor = new Functor[Option] {
+  def map[A, B](opt: Option[A])(f: A => B) = opt map f
+}
+
+{{content}}
+```
+
+???
+- First we define a trait with the `Functor` methods
+- In this case, mapping inside some container-like type
+- Next we create an instance of the typeclass for the `Option` type constructor
+- And now we can write a method that is generic in the `Functor` instance
+--
+
+def addWorld[F[_]](fs: F[String])(implicit f: Functor[F]): F[String] = 
+  f.map(fs)(_ + " World!")
+
+addWorld(Option("Hello")) // Some(Hello World!)
+
+???
+- Typeclasses were actually invented in Haskell, and so it has special syntax for it
+- For example, the `Functor` typeclass is the defined as follows
+---
+```
+class Functor f where
+  fmap :: (a -> b) -> f a -> f b
+  
+  
+{{content}}
+```
+
+???
+- This can be read as: the typeclass `Functor` accepts a type constructor `f` and has one method, `fmap`
+- `fmap` take a function from `a` to `b`, then an instance of `f` of `a`, and produces an `f` of `b`
+- Note that Haskell is inferring that `f` is a type constructor and not a simple type, it can be seen from the usage of `f` in `fmap`
+- The name of `fmap` is not `map` for historical reasons
+- This typeclass is part of the standard library
+- We can now make an instance of `Functor` for `Maybe` the Haskell equivalent of `Option`
+--
+
+data Maybe a = Just a | Nothing deriving (Eq, Show)
+
+instance Functor Maybe where
+  fmap f (Just x) = Just $ f x
+  fmap _ Nothing = Nothing
+  
+{{content}}
+???
+- First the definition of `Maybe`, which is the same as the algebraic data types we've seen before, except that it has a type parameter
+- We just go by cases of `Maybe`, and apply `f` when it's possible
+- As in the Scala case, we can write a function that is generic in the typeclass instance
+--
+
+addWorld :: Functor f => f [Char] -> f [Char] 
+addWorld fs = fmap (++ " World!") fs
+
+addWorld $ Just "Hello" -- Just "Hello World!"
+
+???
+- The part before the thick arrow is the typeclass constraint
+- Which can be read as: given that there is an instance of `Functor` for `f`, do the following
+- When we specify the typeclass constraint it automatically brings the relevant methods into scope
+- So we have access to `fmap`, which is chosen by the compiler to be the right one 
+- Similar to how Scala's implicits work
+- Let's do a slightly more complicated example
+- The `Applicative` typeclass, it's not that common in Scala, probably because the syntax does not work that well with it
+- But it is the typeclasses behind Scalaz's `Validation`
+- It is roughly defined like this:
+---
+```
+class Functor f => Applicative f where
+    pure :: a -> f a
+
+    (<*>) :: f (a -> b) -> f a -> f b
+    
+{{content}}
+```
+
+???
+- It actually has more methods, but they have default implementations
+- We see that `Applicative` has a typeclass constraint of its own, `Functor`
+- Which means that every `Applicative` is also a `Functor`, that is, `Applicative` generalizes `Functor`
+- If we think of `f` as some sort of a container with an effect, than `pure` takes a plain value a puts in the container
+- The `<*>` is called "sequential application" the signature tells us what it does
+- If we have a function inside the "container", we can use sequential application to apply the function to another value inside another container
+- Let's implement this class for `Maybe`
+--
+
+instance Applicative Maybe where
+  pure x = Just x
+  
+  Just f <*> Just x = Just $ f x
+  _      <*> _      = Nothing
+  
+???
+- This is the obvious implementation, in the sense that there are some rules that `Applicative` should obey, and this is the only reasonable way to obey them
+- `pure` just wraps a value in a `Just`
+- The application operator is non-trivial only when both sides are `Just`s, then we apply the function
+- In all other cases we just return `Nothing`
+- Let's see what can we do with it
+---
+```
+Search :: String -> TwitterAPI
+
+pure Search :: Maybe (String -> TwitterAPI)
+
+pure Search <*> Just "I dunno" -- Just (Search "I dunno")
+
+{{content}}
+```
+???
+- `Search` is function that takes a string, we lift it into our `Applicative`
+- Then we apply it a `Just` value
+- But the whole `pure ... <*>`, is just a map
+- We can define an operator that does this and this becomes
+--
+Search <$> Just "I dunno"
+???
+- The `<$>` stands for `fmap`
+- Let's try a more complicated example
+---
+```
+Timeline :: User -> Integer -> TwitterAPI
+
+pure Timeline :: Maybe (User -> Integer -> TwitterAPI)
+
+pure Timeline <*> Just "Keyser" <*> Just 5 -- Just (Timeline "Keyser" 5)
+
+pure Timeline <*> Nothing <*> Just 5 -- Nothing
+
+{{content}}
+```
+???
+- In this case lift the `Timeline` function, which takes two arguments
+- So we use the sequential application operator to two values
+- But if any of the values is missing, the whole thing fails
+- We can again use the `<$>` dollar operator to make this look nicer
+--
+
+Timeline <$> Just "Keyser" <*> Just 5
+
+???
+- Which is a very neat way to apply function inside of containers or contexts
+- With all this in hand we are ready to start implementing our application
+- Any questions so far?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  </textarea>
+	<script
+		src="remark-0.10.2.min.js"
+		type="text/javascript">
+	</script>
+	<script type="text/javascript">
+    var slideshow = remark.create({ 
+		highlightLanguage: 'haskell', 
+		highlightStyle: 'magula' // default, googlecode, magula, vs
+	});
+    //document.addEventListener('click', function (e) { slideshow.gotoNextSlide() }, false);
+	</script>
+</body>
+</html>
