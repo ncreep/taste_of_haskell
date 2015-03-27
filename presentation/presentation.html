@@ -506,14 +506,13 @@ pure Timeline <*> Nothing <*> Just 5 -- Nothing
 
 Timeline <$> Just "Keyser" <*> Just 5
 
-
-{{content}}
 ???
 - Which is a very neat way to apply function inside of containers or contexts
 - Because of currying this pattern works for any number of arguments and for any `Applicative`
 --
+```
 f <$> x1 <*> x2 <*> ... <*> xn
-
+```
 ???
 - If you're familiar with Scalaz's validation, this should look familiar
 - With all this in hand we are ready to start implementing our application
