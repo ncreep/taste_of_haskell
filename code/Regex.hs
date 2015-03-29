@@ -22,6 +22,7 @@ data Regex =
   deriving (Eq, Show)
  
 -- Converts a `Regex` value into a corresponding `Parser`
+regexToParser :: Regex -> Parser String
 regexToParser regex = case regex of
   Str s     -> string s
   Dot       -> dot
@@ -44,11 +45,13 @@ regexString = Str <$> plus alphaNum
 regexDot    = Dot <$ char '.'
 regexOneOf  = OneOf <$> (char '[' *> plus alphaNum <* char ']') -- syntax: [abc]
 regexNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']') -- syntax: [^abc]
-regexStar   = Star <$> (regexDot <|> regexChar <|> regexOneOf <|> regexNoneOf) <* char '*' -- syntax: a*
-regexPlus   = Plus <$> (regexDot <|> regexChar <|> regexOneOf <|> regexNoneOf) <* char '+' -- syntax: a+
+regexStar   = Star <$> singleCharRegex <* char '*' -- syntax: a*
+regexPlus   = Plus <$> singleCharRegex <* char '+' -- syntax: a+
 regexOr     = Or <$> notRegexOr <* char '|' <*> regexParser -- syntax: abc*|[abc]a|.*
 -- since `Or` should have low precedence, first trying to match as many non-`Or` values as possible
 
+-- Parser that match single characters
+singleCharRegex = regexDot <|> regexChar <|> regexOneOf <|> regexNoneOf
 -- A single parser for everything that is not an `Or` parser, parsing as many occurrences as possible 
 notRegexOr = andRegexes <$> some (regexString <|> regexDot <|> regexOneOf <|> regexNoneOf <|> regexStar <|> regexPlus)
 
