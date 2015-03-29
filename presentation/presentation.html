@@ -322,22 +322,8 @@ update = StatusUpdate "foo" "like, whatever"
 search :: TwitterAPI
 search = Search "I dunno"
 
-
-{{content}}
 ???
 - Note that, unlike Scala, there is no subtyping here, so all values have the same type, `TwitterAPI`
-- Another mechanism to create types is `newtype`
-
---
-newtype TweetId = TweetId { id :: Integer }
-
-{{content}}
-???
-- This differs from a `data` declaration that we've seen before in that it allowed to have just a single field
-- Essentially it's just a wrapper around a value, which is used to tag it with a new type
-- Haskell optimizes this wrapper away at compile time
-- This can be useful when we want to add more type-safety like tagging the `User` type with a new type, and not just a synonym
-- In here we also get pattern matching for free, but also a function that unwraps the value
 - Let's move on to typeclasses
 - But first, a reminder of typeclasses in Scala
 - We can encode typeclasses in Scala in the following way
