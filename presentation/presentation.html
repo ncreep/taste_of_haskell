@@ -245,7 +245,6 @@ mapPlusTwo [1, 2, 3] -- [3, 4, 5]
 ---
 
 ```
-infixr 0 $
 ($) :: (a -> b) -> a -> b 
 f $ x = f x
   
@@ -253,9 +252,8 @@ f $ x = f x
 ```
 ???
 - We can define custom operator in Haskell, just like any function
-- This also defines the associativity (right) and precedence (0, the lowest) for the operator
 - This is the function application operator, it's defined in Haskell Prelude (which is like Scala's Predef) and imported by default
-- It might seem useless, but because of its low precedence it allows us to save some parenthesis
+- It might seem useless, but because of its defined with low precedence, and this allows us to save some parenthesis
 - Suppose we want to write:
 --
 map (+ 2) (filter (3 <) [1, 2, 3, 4, 5])
@@ -267,24 +265,7 @@ map (+ 2) (filter (3 <) [1, 2, 3, 4, 5])
 --
 map (+ 2) $ filter (3 <) [1, 2, 3, 4, 5] -- [6, 7]
     
----
-```
-notAlphaNum :: Char -> Bool
-notAlphaNum c = (not . isAlphaNum) c
-
-{{content}}
-```
 ???
-- Another important operator is the function composition operator, a dot
-- It is also defined in the Prelude and available by default
-- We can use it like so
-- This definition can be rewritten without its argument:
---
-notAlphaNum' :: Char -> Bool
-notAlphaNum' = not . isAlphaNum
-
-???
-- This is called point-free style, and sometimes it's clearer this way
 - This concludes the basic syntax
 - Let's move on to type definitions
 - There are a number of ways to define types in Haskell

@@ -57,15 +57,10 @@ f $ x = f x
 mapFiltered = map (+ 2) $ filter (3 <) [1, 2, 3, 4, 5] -- [6, 7]
 mapFiltered' = map (+ 2) (filter (3 <) [1, 2, 3, 4, 5])
 
-notAlphaNum :: Char -> Bool
-notAlphaNum c = (not . isAlphaNum) c
-
-notAlphaNum' :: Char -> Bool
-notAlphaNum' = not . isAlphaNum
-
 {- Type/data declarations -}
 
 type User = String
+
 data TwitterAPI = Timeline User Integer 
                 | StatusUpdate User String 
                 | Search String 
