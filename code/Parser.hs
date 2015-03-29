@@ -94,7 +94,5 @@ eof = Parser $ \s ->
     _  -> []
   
 -- Tries to match the given parser till then end of the string, if successful, returning a list of results
-match :: Eq a => Parser a -> String -> [a]
-match p str = map fst noDupsRes
-  where noDupsRes = nub parseRes
-        parseRes = parse (p <* eof) str
+match :: Parser a -> String -> [a]
+match p str = map fst $ parse (p <* eof) str
