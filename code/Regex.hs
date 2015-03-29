@@ -27,16 +27,16 @@ regexToParser regex = case regex of
   Dot       -> dot
   OneOf cs  -> oneOf cs
   NoneOf cs -> noneOf cs
-  Star g    -> star $ regexToParser g
-  Plus g    -> plus $ regexToParser g
-  Or g1 g2  -> regexToParser g1 <|> regexToParser g2
-  And g1 g2 -> regexToParser g1 & regexToParser g2
+  Star r    -> star $ regexToParser r
+  Plus r    -> plus $ regexToParser r
+  Or r1 r2  -> regexToParser r1 <|> regexToParser r2
+  And r1 r2 -> regexToParser r1 & regexToParser r2
 
 -- Using `And`s to join a list of `Regex`s into a single `Regex`
 andRegexes :: [Regex] -> Regex
 andRegexes []       = Str ""
-andRegexes [g]      = g
-andRegexes (g : gs) = And g $ andRegexes gs
+andRegexes [r]      = r
+andRegexes (r : rs) = And r $ andRegexes rs
 
 -- Parsers for the various cases of `Regex`
 regexChar   = Str <$> alphaNum
