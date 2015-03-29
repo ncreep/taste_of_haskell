@@ -77,7 +77,7 @@ oauth config = newOAuth { oauthServerName     = "api.twitter.com"
                       
 -- Does a grep on the text of a list of tweets, return a list with only the matched tweets
 grepTweets :: String -> [Tweet] -> [Tweet]          
-grepTweets pattern = filter $ (matches pattern) . text 
+grepTweets pattern = filter $ (grep pattern) . text 
 
 -- Generating the Twitter feed url for the given user and tweets limit
 feedUrl :: [Char] -> Int -> [Char]

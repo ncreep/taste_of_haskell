@@ -61,8 +61,8 @@ toRegex regexStr = case match regexParser regexStr of
   []        -> empty
   regex : _ -> regexToParser regex -- taking the first result
 
--- Takes a regex-like string and a target string and return `True` if there is a match
-matches :: String -> String -> Bool
-matches regexStr target = not $ null matches
+-- Takes a regex-like string and a target string and return `True` if there is a match anywhere inside the string
+grep :: String -> String -> Bool
+grep regexStr target = not $ null matches
   where matches = match (has regex) target
         regex = toRegex regexStr
