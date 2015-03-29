@@ -125,7 +125,7 @@ Haskell Syntax Primer
 - It should be enough that you'll be able to follow along with the examples we're going to see further down the road
 
 ---
-
+Definitions
 ```
 
 x = 3
@@ -181,6 +181,7 @@ map' f (h:t) = f h : map' f t
 - So it is almost always possible (but not always recommended) to omit type signatures and the compiler just infers it
 - If we actually let the compiler infer the types we get the following:
 ---
+Definitions
 ```
 x :: Integer
 x = 3
@@ -216,7 +217,7 @@ map' f (h:t) = f h : map' f t
 - This actually works very nicely with function application syntax
 - Let's see an example
 ---
-
+Currying
 ```
 mapPlusTwo :: [Integer] -> [Integer]
 mapPlusTwo = map (\x -> x + 2)
@@ -243,7 +244,7 @@ mapPlusTwo' = map (+ 2)
 mapPlusTwo [1, 2, 3] -- [3, 4, 5]
 
 ---
-
+Custom operators
 ```
 ($) :: (a -> b) -> a -> b 
 f $ x = f x
@@ -272,6 +273,7 @@ map (+ 2) $ filter (3 <) [1, 2, 3, 4, 5] -- [6, 7]
 - But first let's start with a Scala example
 
 ---
+Algebraic data types
 ```scala
 type User = String
 
@@ -290,6 +292,7 @@ case class Search(query: String) extends TwitterAPI
 - Now for the (sort of) equivalent Haskell code
 
 ---
+Algebraic data types
 ```
 type User = String
 
@@ -340,7 +343,7 @@ newtype TweetId = TweetId { id :: Integer }
 - We can encode typeclasses in Scala in the following way
 - Suppose we want a `Functor` typeclass
 ---
-
+Typeclasses
 ```scala
 trait Functor[F[_]] {
   def map[A, B](fa: F[A])(f: A => B): F[B]
@@ -366,9 +369,10 @@ def addWorld[F[_]](fs: F[String])(implicit f: Functor[F]): F[String] =
 addWorld(Option("Hello")) // Some(Hello World!)
 
 ???
-- Typeclasses were actually invented in Haskell, and so it has special syntax for it
+- Typeclasses were actually invented for Haskell, and so it has special syntax for it
 - For example, the `Functor` typeclass is the defined as follows
 ---
+Typeclasses
 ```
 class Functor f where
   fmap :: (a -> b) -> f a -> f b
@@ -415,6 +419,7 @@ addWorld $ Just "Hello" -- Just "Hello World!"
 - But it is the typeclasses behind Scalaz's `Validation`
 - It is roughly defined like this:
 ---
+More typeclasses
 ```
 class Functor f => Applicative f where
     pure :: a -> f a
@@ -447,6 +452,7 @@ instance Applicative Maybe where
 - In all other cases we just return `Nothing`
 - Let's see what can we do with it
 ---
+Using `Applicative`
 ```
 Search :: String -> TwitterAPI
 
@@ -467,6 +473,8 @@ Search <$> Just "I dunno"
 - The `<$>` stands for `fmap`
 - Let's try a more complicated example
 ---
+Using `Applicative`
+
 ```
 Timeline :: User -> Integer -> TwitterAPI
 
@@ -495,16 +503,295 @@ Timeline <$> Just "Keyser" <*> Just 5
 f <$> x1 <*> x2 <*> ... <*> xn
 ```
 ???
-- If you're familiar with Scalaz's validation, this should look familiar
+- If you're familiar with Scalaz's `Validation`, this should look familiar
 - With all this in hand we are ready to start implementing our application
 - Any questions so far?
 
+---
+layout: false
+class: center, middle, transition
+
+The Parser
+
+.tweet-regex[![](tweet_regex.png)]
+
+???
+
+- As we described before, the program is going to accept regex-like string
+- We could some library to do the matching with the regex
+- But we won't be doing this, instead, it'll be more instructive to implement our own (simplified) regex engine
+- To do this, we'll use parser combinators, which you may be familiar with from Scala
+- Again, Haskell has some very good parser combinators libraries
+- But instead of using them, we'll quickly implement one on our own
+- For what we need, it's actually not that much of an effort
+
+---
+The parsing function
+```
+newtype Parser a = Parser { parse :: String -> [(a, String)] }
+```
+???
+- A parser is a function that takes a string (or rather, a stream of characters), which is the current state of parsing, and produces a list of pairs
+- Each pair designates a possible parsing of the string
+- The first item in the pair, of type `a`, is the result of parsing
+- The second item is the remaining characters, that is, the new state of the parser
+- To actually run the parser, we apply the function to a string and see the results
+- If the list of results is empty, then there is no way to parse the string
+
+--
+Advancing the stream
+```
+satisfy :: (Char -> Bool) -> Parser String
+satisfy predicate = Parser $ \s ->
+  case s of
+    []   -> []
+    c:cs -> 
+      if predicate c
+      then [([c], cs)]
+      else []
+```
+
+???
+- This is the main function we'll use to parse something
+- It takes a predicate and creates a new parsing function
+- The parser takes one character from the input
+- If the character matches the predicate, the result is a string with this character
+- The new state is the input minus the first character
+- If the predicate fails, the whole parse fails, so the result is the empty list
+- With this function in hand, we can implement a number of simple parsers
+---
+Some simple parsers
+```
+char :: Char -> Parser String
+char c = satisfy (c ==)
 
 
+{{content}}
+```
+???
+- This function takes a single character and checks whether the next character in the string matches it
+- In the same vain, we can write more parsers
+--
+dot = satisfy $ const True
 
 
+alphaNum = satisfy isAlphaNum
 
 
+oneOf, noneOf :: [Char] -> Parser String
+oneOf cs = satisfy $ \c -> elem c cs
+noneOf cs = satisfy $ \c -> notElem c cs
+
+???
+- `dot` matches any character
+- The expression `const True` return a function that return `True` on any input
+- `alphaNum` matches any alphanumeric character
+- In `oneOf` and `noneOf` we are taking a list of characters and creating a predicate that checks the presence (or abscence) of any of the characters in the stream
+---
+Using the parsers
+
+```
+p1 = char 'a'
+
+p2 = oneOf "abc"
+
+
+parse p1 "abc" -- [("a","bc")]
+parse p2 "cde" -- [("c","de")]
+parse p2 "def" -- []
+```
+???
+- We can create simple parsers with what we have
+- The `parse` function unwraps our parsing function, and we can apply it to the input
+- In the first two cases there is only possible parsing, and we consume one character leaving the rest of the string
+- In the last case there are no parsings, so the result is empty
+- So far we have a bunch of simple parsers, but we don't have any way to combine them into more complicated parsers
+- Since we want parser combinators we'll need to write some combinators to go along with the parsers
+- To do this, we'll need some infrastructure, and for this we are going to implement a number of typeclasses
+- We start with `Functor`
+
+---
+The infrastructure
+```
+instance Functor Parser where
+  fmap f (Parser p) = Parser $ \s -> 
+    [(f a, s') | (a, s') <- p s]
+    
+    
+{{content}}
+```
+???
+- There's a bit of new syntax here, it's called "list comprehensions". It's like Scala's for comprehensions but specialized to lists
+- What's to the left of the vertical bar is the result of the whole thing, to the right we deconstruct the list
+- So, given a mapping function (`f`) and a parsing function (`p`), we create a new parser function. 
+- In this function, we run the original function on the incoming string
+- Then we run over the results and apply `f` in the appropriate place
+- Next we have the `Applicative` instance
+--
+instance Applicative Parser where
+  pure a = Parser $ \s -> [(a, s)]
+
+  Parser pf <*> Parser pa = Parser $ \s ->
+    [(f a, s'') | (f, s') <- pf s, (a, s'') <- pa s']
+    
+???
+- First there's `pure`, which just takes a value and creates a new parsing function around it
+- Sequential application is quite similar to `fmap` from before, except that we now have two parser functions to deal with
+- In the first step we unwrap the function hidden in the first parser, in the second we unwrap the value hidden in the second
+- Then we apply the function to the value
+- Notice that we are careful to propagate the state of the parser between the first parser and the second to the final result
+- When we use sequential application, we run both parsers one after the other
+- This gives us a way to combine two parser into a new one, let's see an example
+---
+Combining parsers
+```
+(&) :: Parser String -> Parser String -> Parser String
+(&) pa pb = (++) <$> pa <*> pb
+
+(++) :: [a] -> [a] -> [a]
+
+
+{{content}}
+```
+
+???
+- Here we are defining an operator that takes two parser and runs them one after the other and concatenates the results
+- Notice the applicative syntax
+- In here the `++` operator is used as a two arguments function, we `fmap` and sequential application to apply this operator inside the parsers
+- Using `&` we can define the `string` function that matches a whole string
+--
+string :: String -> Parser String
+string ""     = pure ""
+string (c:cs) = char c & string cs
+
+{{content}}
+???
+- The `string` parser takes a string and creates a parser that mathces it in the input
+- The empty string creates a trivial parser that matches anything
+- In case the string is not empty, we are deconstructing it into the first character and the rest
+- We create a parser with the first character and combine it using `&` with a parser created with the rest of the characters
+- We'll need another typeclass to continue, the `Alternative` class
+---
+More infrastructure
+```
+class Applicative f => Alternative f where
+    empty :: f a
+    
+    (<|>) :: f a -> f a -> f a
+    
+    many :: f a -> f [a]
+    some :: f a -> f [a]
+    
+    
+{{content}}
+```
+
+???
+- The definition of the class is approximately this
+- Given that `f` has an instance of `Applicative`, we define the `Alternative` instance
+- In the context of parsing, `empty` is a failed parse, i.e. the empty list
+- The `<|>` operator, is the alternation operator, it takes two parser and runs them in parallel
+- `many` and `some` run a single parser as many times as possible and aggregate the results into a list
+- `many` runs the parser zero or more times, while `some` runs it at least once
+- Let's see the implementation
+--
+instance Alternative Parser where
+  empty = Parser $ \s -> []
+
+  Parser pa <|> Parser pb = Parser $ \s -> pa s ++ pb s
+
+???
+- So `empty` is like we said
+- And the alternative creates a new function that runs the parsers on the same input, and concatenates the results
+- This provides backtracking in case we have many possible parsings
+- We don't need to implement `some` and `many` since they have default implementation in terms of the alternation operator
+- With this in hand we can combine parsers in a new way, for example
+---
+Using the new combinators
+```
+string "Keyser" <|> string "Soze"
+
+
+{{content}}
+```
+???
+- This matches either the string "Keyser" or "Soze"
+--
+star, plus :: Parser String -> Parser String
+star p = concat <$> many p
+plus p = concat <$> some p
+
+
+{{content}}
+???
+- `star` takes a parser and applies it zero or more times using `many`
+- The result is a list of strings, we than map the the concatenation function into the parser, which gives a single long string
+- `plus` is the same thing, but applies the operator one or more times
+- The parser the we implemented so far let us define another useful combinator
+--
+has :: Parser String -> Parser String
+has p = star dot *> p <* star dot
+
+???
+- `has` takes a parser and tries to match it anywhere inside of the input string
+- It does that using two new operators, `*>` and `<*`, these are provided by the `Applicative` library
+- They are similar to `<*>`, the sequence two parsers together, but they discard the result on either the left or right
+- In our case, we first use `star dot` to match any number of characters
+- Then we discard the result, and continue matching `p`
+- After that we again match any number of characters and discard them
+- As a result, if `p` matches anywhere inside the input, `has p` matches this string
+- The last thing we need for our parser combinator library is a way to actually run parsers on strings
+- We do this with the match function
+---
+Running a parser
+```
+match :: Parser a -> String -> [a]
+match p str = map fst $ parse (p <* eof) str
+        
+        
+{{content}}
+```
+???
+- Match takes any parser and a string and produces a list of results
+- In the second part we create a new parser which is a combination of `p` and the `eof` parser
+- The `eof` matches the end of the string, we'll see its definition in a moment
+- So `p <* eof` matches `p` only if it reaches the end of the input, and discards the result of `eof`
+- The `parse` unwraps our parsing function, which we then run against the input string
+- The result is a list of pairs, where the first is a possible result, and the second is the remaining input
+- We now map the `fst` function over this list, and discard the remaining inputs part
+- And here's the `eof` parser
+--
+eof :: Parser ()
+eof = Parser $ \s ->
+  case s of
+    "" -> [((), "")]
+    _  -> []
+    
+???
+- It inspects the input, if its empty we succeed and leave the unit value
+- Otherwise we fail
+- These are all the combinators we'll need
+- To see that it actually works, we can run a simple example
+---
+A bigger example
+
+```
+p = oneOf "Kk" & string "eyser" & plus dot & oneOf "Ss" & string "oze"
+-- As regex: [Kk]aiser.+[Ss]oze
+
+match p "Keyser Soze" -- ["Keyser Soze"]
+match p "No Keyser" -- []
+match p "Keyser soze" -- ["Keyser soze"]
+match p "KeyserSoze" -- []
+```
+
+???
+- A larger example, we combine a number of parsers together
+- They are equivalent to this regular expression
+- As you can see, we wrote a small domain specific language for parsers
+- And they work as expected
+- With this, we have the foundation to implement our little regular expressions engines
+---
 
 
 
