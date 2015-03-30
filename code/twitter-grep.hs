@@ -107,6 +107,9 @@ timeline config user = do
   let body   = responseBody resp
   return $ decode body
 
+renderHtml :: Html -> ActionM ()
+renderHtml = S.html . renderHtml
+  
 -- Starting the server for the application.
 startServer :: Config -> IO ()
 startServer config = scotty 3000 $ do
@@ -120,7 +123,7 @@ startServer config = scotty 3000 $ do
           Nothing     -> h1 "Failed to fetch tweets"
           Just tweets -> htmlTemplate $ grepTweets pattern tweets
           
-    (S.html . renderHtml) response
+    renderHtml response
     
   -- An auxiliary js file to render tweets
   get "/twitter.js" $ file "twitter.js"
