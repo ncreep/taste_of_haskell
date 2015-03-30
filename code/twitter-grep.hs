@@ -124,12 +124,16 @@ startServer config = scotty 3000 $ do
     
   -- An auxiliary js file to render tweets
   get "/twitter.js" $ file "twitter.js"
+  
+-- Trying to read the configuration file from 'config.json'
+readConf :: IO (Maybe Config)
+readConf = decode <$> readFile "config.json"
 
 -- Starting the application: first reading the configuration data from 'config.json',
 -- then starting the server
 main :: IO ()
 main = do
-  maybeConf <- decode <$> readFile "config.json"
+  maybeConf <- readConf
   case maybeConf of 
     Nothing     -> putStrLn "Failed to parse config.json"
     Just config -> startServer config
