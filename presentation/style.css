@@ -1,5 +1,5 @@
 .remark-slide .remark-slide-content {
-	padding: 1em 1.25em;
+	padding: 0.5em 0.5em;
 }
 
 .remark-slide-content {
@@ -10,7 +10,7 @@ body {
 }
 
 p {
-	margin: 0.7em 0 0.4em 0;
+	margin: 0.1em 0 0.4em 0;
 }
 
 code {
@@ -90,10 +90,6 @@ a {
 	/* display: none;*/
 }
 
-.transition .remark-slide-number {
-	font-size: 0.75em;
-}
-
 .transition a {
 	color: rgb(255, 255, 255);
 }
@@ -114,6 +110,12 @@ a {
 }
 
 .tweet-regex img {
+	width: 500px;
+	border-radius: 5px;
+}
+
+
+.tweet-adt img {
 	width: 500px;
 	border-radius: 5px;
 }

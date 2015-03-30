@@ -89,15 +89,15 @@ layout: false
 
 ## How?
 
-We'll build Twitter-grep, a small server-side application that:
+Twitter-grep, a small server that:
 
 - Accepts GET (@twitter-name, regex)
 
 - Fetches @twitter-name timeline
 
-- Filters timeline with regex expression
+- Filters timeline with the regex expression
 
-- Serves an HTML page with results
+- Serves an HTML page with the results
 
 ???
 
@@ -111,7 +111,6 @@ We'll build Twitter-grep, a small server-side application that:
 - Produces an HTML page with the resulting tweets
 
 ---
-layout: false
 class: center, middle, transition
 
 Haskell Syntax Primer
@@ -257,14 +256,14 @@ f $ x = f x
 - It might seem useless, but because of its defined with low precedence, and this allows us to save some parenthesis
 - Suppose we want to write:
 --
-map (+ 2) (filter (3 <) [1, 2, 3, 4, 5])
+map (+ 2) (filter (3 <) [1, 2, 3, 4, 5]) -- [6, 7]
 
 {{content}}
 ???
 - Here we are first filtering a list and then mapping it
 - With the application operator we can write:
 --
-map (+ 2) $ filter (3 <) [1, 2, 3, 4, 5] -- [6, 7]
+map (+ 2) $ filter (3 <) [1, 2, 3, 4, 5] 
     
 ???
 - This concludes the basic syntax
@@ -313,11 +312,11 @@ data TwitterAPI = Timeline User Integer
 - They can be used as follows
 - We also get pattern matching for free (just like with case classes)
 --
-tl :: TwitterAPI
-tl = Timeline "foo" 15
+timeline :: TwitterAPI
+timeline = Timeline "Keyser" 15
 
 update :: TwitterAPI
-update = StatusUpdate "foo" "like, whatever"
+update = StatusUpdate "Keyser" "like, whatever"
 
 search :: TwitterAPI
 search = Search "I dunno"
@@ -352,6 +351,7 @@ implicit val optionFunctor = new Functor[Option] {
 def addWorld[F[_]](fs: F[String])(implicit f: Functor[F]): F[String] = 
   f.map(fs)(_ + " World!")
 
+  
 addWorld(Option("Hello")) // Some(Hello World!)
 
 ???
@@ -391,6 +391,7 @@ instance Functor Maybe where
 
 addWorld :: Functor f => f String -> f String 
 addWorld fs = fmap (++ " World!") fs
+
 
 addWorld $ Just "Hello" -- Just "Hello World!"
 
@@ -494,7 +495,6 @@ f <$> x1 <*> x2 <*> ... <*> xn
 - Any questions so far?
 
 ---
-layout: false
 class: center, middle, transition
 
 The Parser
@@ -518,6 +518,9 @@ newtype Parser a = Parser { parse :: String -> [(a, String)] }
 ```
 ???
 - A parser is a function that takes a string (or rather, a stream of characters), which is the current state of parsing, and produces a list of pairs
+- `newtype` is like `data` but wraps a single value
+- You can think of it as a type tag, which the compiler optimizes away at compile time
+- We name the wrapped value `parse`, this generates the function `parse` that unwraps the value when we need it (though we also have pattern matching)
 - Each pair designates a possible parsing of the string
 - The first item in the pair, of type `a`, is the result of parsing
 - The second item is the remaining characters, that is, the new state of the parser
@@ -634,7 +637,7 @@ Combining parsers
 (&) :: Parser String -> Parser String -> Parser String
 (&) pa pb = (++) <$> pa <*> pb
 
-(++) :: [a] -> [a] -> [a]
+(++) :: String -> String -> String
 
 
 {{content}}
@@ -650,9 +653,9 @@ string :: String -> Parser String
 string ""     = pure ""
 string (c:cs) = char c & string cs
 
-{{content}}
+-- string "abc" = char 'a' & char 'b' & char 'c' & pure ""
 ???
-- The `string` parser takes a string and creates a parser that mathces it in the input
+- The `string` parser takes a string and creates a parser that matches it in the input
 - The empty string creates a trivial parser that matches anything
 - In case the string is not empty, we are deconstructing it into the first character and the rest
 - We create a parser with the first character and combine it using `&` with a parser created with the rest of the characters
@@ -661,12 +664,12 @@ string (c:cs) = char c & string cs
 More infrastructure
 ```
 class Applicative f => Alternative f where
-    empty :: f a
-    
-    (<|>) :: f a -> f a -> f a
-    
-    many :: f a -> f [a]
-    some :: f a -> f [a]
+  empty :: f a
+  
+  (<|>) :: f a -> f a -> f a
+  
+  many :: f a -> f [a]
+  some :: f a -> f [a]
     
     
 {{content}}
@@ -763,12 +766,12 @@ A bigger example
 
 ```
 p = oneOf "Kk" & string "eyser" & plus dot & oneOf "Ss" & string "oze"
--- As regex: [Kk]aiser.+[Ss]oze
+-- [Kk]eyser.+[Ss]oze
 
 match p "Keyser Soze" -- ["Keyser Soze"]
-match p "No Keyser" -- []
+match p "No Keyser"   -- []
 match p "Keyser soze" -- ["Keyser soze"]
-match p "KeyserSoze" -- []
+match p "KeyserSoze"  -- []
 ```
 
 ???
@@ -778,6 +781,219 @@ match p "KeyserSoze" -- []
 - And they work as expected
 - With this, we have the foundation to implement our little regular expressions engines
 ---
+class: center, middle, transition
+
+The regex-like language
+
+.tweet-adt[![](tweet_adt.png)]
+
+???
+- Before we start our regex engine, we need to specify what exactly we need
+- This tip is actually very good, and works in both Scala and Haskell
+- So let's write down an algebraic data type for our regex-like language and see where it leads us
+---
+
+The Regex ADT
+
+```
+data Regex = 
+    Str String 
+  | Dot
+  | OneOf [Char] 
+  | NoneOf [Char] 
+  | Star Regex 
+  | Plus Regex 
+  | Or Regex Regex
+  | And Regex Regex
+  deriving (Eq, Show)
+```
+???
+- So this is what we'll be implementing, it should be pretty readable
+- Each constructor represents some part of our language
+- `Str` represents the string it gets as an argument
+- `Dot` is the dot regex and that will match any character
+- `OneOf` and `NoneOf` match a set of characters (or their complement)
+- `Star` and `Plus` match a given regex a number of times
+- `Or` and `And` match either or both of the given regexes
+- For example, the regex we seen before can be written as follows
+--
+For example
+```
+-- [Kk]eyser.+[Ss]oze
+
+And (OneOf "Kk") (And (Str "eyser") (And (Plus Dot)
+  (And (OneOf "Ss") (Str "oze"))))
+```
+???
+- Now that we have this specification, we can write an evaluator
+- With what we already implemented it almost writes itself
+---
+The evaluator
+```
+regexToParser :: Regex -> Parser String
+regexToParser regex = case regex of
+  Str s     -> string s
+  Dot       -> dot
+  OneOf cs  -> oneOf cs
+  NoneOf cs -> noneOf cs
+  Star r    -> star $ regexToParser r
+  Plus r    -> plus $ regexToParser r
+  Or r1 r2  -> regexToParser r1 <|> regexToParser r2
+  And r1 r2 -> regexToParser r1 & regexToParser r2
+```
+???
+- So no surprises here, each case does the obvious thing
+- Note the recursion in the `Star`, `Plus`, `Or` and `And`
+- We can use it on the regex from before
+--
+Running it
+```
+regex = And (OneOf "Kk") (And (Str "eyser") (And (Plus Dot)
+  (And (OneOf "Ss") (Str "oze"))))
+
+p = regexToParser regex
+
+match p "Keyser Soze" -- ["Keyser Soze"]
+match p "Keyser oze"  -- []
+```
+
+???
+- Now comes the more difficult part, we need to write a parser that takes a regex string and convert it into a `Regex` ADT value
+
+---
+Parsing Regex
+???
+- Let's do it step by step
+--
+
+```
+regexChar   = Str <$> alphaNum
+
+{{content}}
+```
+???
+- This matches exactly one alphanumeric and wraps it in a `Str` constructor
+--
+regexString = Str <$> plus alphaNum
+
+{{content}}
+???
+- This matches at least one alphanumeric and wraps the resulting string `Str` constructor
+--
+regexDot    = Dot <$ char '.'
+
+{{content}}
+???
+- The `<$` operator is like `fmap`, but ignores it input and returns what's on the left
+- So this matches a single dot, and places the `Dot` constructor instead of the matched dot
+--
+regexOneOf  = OneOf <$> (char '[' *> plus alphaNum <* char ']')
+
+regexNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']')
+
+{{content}}
+???
+- First we match a bracket and discard it, then we match an alphanumeric string, which is the result of the parser, then we match another bracket and discard it
+- We then wrap the resulting string in a `OneOf` constructor
+- The `NoneOf` case is similar, except that first we match a `[^`
+--
+regexStar   = Star <$> singleCharRegex <* char '*'
+
+regexPlus   = Plus <$> singleCharRegex <* char '+'
+
+{{content}}
+???
+- `singleCharRegex`, which I'll define later, is an aggregate parser, that matches any of the single character patterns above
+- So in this case we match a single character, then match either a `*` or a `+` and discard it
+- We then wrap the single chararcter pattern in a `Star` or `Plus` constructor
+--
+regexOr     = Or <$> notRegexOr <* char '|' <*> regexParser 
+
+{{content}}
+???
+- The `Or` case is the most complicated, we need to write the parser in such a way that or operator has the lowest precedence
+- The details don't really matter, but the result is the following:
+- First we match as many expressions that are not `Or`, this is the `notRegexOr` that we'll define in a moment
+- Then we match and discard a single pipe
+- And then we recursively match the whole regex parser, which we'll define now
+--
+regexParser = regexOr <|> notRegexOr
+
+
+{{content}}
+???
+- So the full regex parser is either an `Or` case, or as many non-`Or` cases as possible
+- If you're still following, you might notice the strange recursion pattern here
+- `regexOr` references `regexParser` which in turn references `regexOr`
+- This should've led to infinite recursion, but it doesn't
+- The reason is, that I didn't mention it this far, but by default, all definitions in Haskell are lazy
+- So neither of these expressions is actually evaluated until we call it
+- We could've achieved something similar with Scala's lazy variable or by-name parameters
+- But in order to do that, we need to explicitly ask for it, Haskell does it by default
+- Here are the two missing definitions
+--
+singleCharRegex = regexDot <|> regexChar <|> regexOneOf <|> regexNoneOf
+                              
+{{content}}
+???
+- This just matches any of the patterns from before that match a single character
+--
+notRegexOr = andRegexes <$> some (regexString <|> regexDot <|> regexOneOf
+                              <|> regexNoneOf <|> regexStar <|> regexPlus)
+
+???
+- This matches any of the non-`Or` patterns from befor, at least once or more
+- The `some` function produces a list of `Regex` values, we then apply the `andRegexes` function to join all together
+- `andRegexes` is a simple fold like function, that inserts the `And` constructor between all of the patterns
+- I'll skip it's definition for now
+---
+
+Combining all together
+
+```
+toRegex :: String -> Parser String
+toRegex regexStr = case match regexParser regexStr of
+  []        -> empty
+  regex : _ -> regexToParser regex
+  
+
+grep :: String -> String -> Bool
+grep regexStr target = not $ null matches
+  where matches = match (has regex) target
+        regex = toRegex regexStr
+```
+
+???
+- We can now combine everything together
+- `toRegex` converts a regex string into a parser
+- And `grep` uses `toRegex` on then matches it the result on an input string
+- Note that we are using the `has` combinator to search for the pattern anywhere in the input target string
+- The whole thing succeeds if there is at least one possible match (`null` checks whether ther result is empty)
+- Let's run some examples
+--
+Running it
+
+```
+grep "[Kk]eyser.+[Ss]oze|[^abc].*ton" "I am Keyser Soze..." -- True
+
+grep "[Kk]eyser.+[Ss]oze|[^abc].*ton" "Or Keaton, maybe"    -- True
+
+grep "[Kk]eyser.+[Ss]oze|[^abc].*ton" "But so is Kobayashi" -- False
+```
+???
+- This concludes our venture into parser combinators
+- Of course there's a lot more that can be implemented with these tools
+- But I hope that this gave a taste of what it looks like in Haskell
+- Let's move on
+
+ 
+ 
+
+
+
+
+
+
 
 
 

@@ -66,7 +66,7 @@ data TwitterAPI = Timeline User Integer
                 | Search String 
                 deriving (Eq, Show)
 
-tl = Timeline "foo" 15
+timeline = Timeline "foo" 15
 update = StatusUpdate "foo" "like, whatever"
 search = Search "I dunno"
 
