@@ -737,32 +737,18 @@ Running a parser
 ```
 match :: Parser a -> String -> [a]
 match p str = map fst $ parse (p <* eof) str
-        
-        
-{{content}}
 ```
 ???
 - Match takes any parser and a string and produces a list of results
 - In the second part we create a new parser which is a combination of `p` and the `eof` parser
-- The `eof` matches the end of the string, we'll see its definition in a moment
+- The `eof` matches the end of the string, you can see its definition in the full source code
 - So `p <* eof` matches `p` only if it reaches the end of the input, and discards the result of `eof`
 - The `parse` unwraps our parsing function, which we then run against the input string
 - The result is a list of pairs, where the first is a possible result, and the second is the remaining input
 - We now map the `fst` function over this list, and discard the remaining inputs part
-- And here's the `eof` parser
---
-eof :: Parser ()
-eof = Parser $ \s ->
-  case s of
-    "" -> [((), "")]
-    _  -> []
-    
-???
-- It inspects the input, if its empty we succeed and leave the unit value
-- Otherwise we fail
 - These are all the combinators we'll need
 - To see that it actually works, we can run a simple example
----
+--
 A bigger example
 
 ```
