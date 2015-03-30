@@ -971,7 +971,196 @@ grep "[Kk]eyser.+[Ss]oze|[^abc].*ton" "But so is Kobayashi" -- False
 - This concludes our venture into parser combinators
 - Of course there's a lot more that can be implemented with these tools
 - But I hope that this gave a taste of what it looks like in Haskell
+- I think that most important thing to take away from this is how much you can gain by tapping into the standard typeclasses
+- By defining only a few typeclass functions, out of the box, we got a bunch of generic combinators that just work
 - Let's move on
+---
+
+class: center, middle, transition
+
+IO
+
+.tweet-imperative[![](tweet_imperative.png)]
+
+???
+- The quote here, although is not completely serious, does have some truth in it
+- So far, everything we've done is pure
+- But I've promised you "real world" stuff
+- So let's do that
+---
+The problem:
+
+- Haskell is lazy
+
+- Laziness does not work with side effects
+
+???
+- But we have a problem
+- As I mentioned when we wrote the regex parser, Haskell is lazy by default
+- In a lazy setting, running something that has side effects is not recommended, since it's very hard to predict when the side effects will run
+--
+
+The solution: IO actions
+
+???
+- The solution comes in the form of IO actions, let's see it with an example
+---
+IO actions
+```
+hello :: IO ()
+hello = putStr "Hello"
+
+{{content}}
+```
+
+???
+- This is an action of type `()`, so it's a pure side effect that doesn't produce a meaningful result
+- An IO action is a description of some IO action that we may want to perform, it's not the action itself
+- Writing the code above does nothing, it just defines a new IO value
+- Since these are values we can manipulate them as such
+--
+world :: IO ()
+world = putStrLn " World!"
+
+helloWorld = hello *> world
+
+
+{{content}}
+???
+- We are using the fact that `IO` has an `Applicative` instance
+- So we can create a couple of `IO` values and sequence them one after the other
+- In this case we first run the `hello` action, and then the `world` action
+- The result is a composite action that prints both strings
+- We can also have actions that produce some value
+--
+getName :: IO String
+getName = getLine
+
+{{content}}
+???
+- This action reads a string from standard input and return the result
+- We can use `fmap` to manipulate the result
+--
+addGreeting :: IO String
+addGreeting = fmap ("Hello " ++) getName
+???
+- `fmap` get access to the string inside the action and can apply a function to it, yielding a new action
+- But what if we want something more complicated, like reading a string and then using it to print a response?
+- `Functor` and `Applicative` don't have any function that does that
+- Enter the dreaded `Monad`
+---
+The `Monad` class
+
+```
+class Applicative m => Monad m where
+  return :: a -> m a
+
+  (>>=)  :: m a -> (a -> m b) -> m b
+  
+
+{{content}}
+```
+???
+- This is (approximately) the `Monad` definition
+- `return` is a constructor function, like `pure` in `Applicative`
+- The `>>=` symbol is called `bind` and it's like Scala's `flatMap`
+- `IO` has a monad instance, so we can use these functions to do some more complicated chaining
+--
+getNameAndGreet :: IO ()
+getNameAndGreet = getName >>= \name -> 
+  putStrLn $ "Hello " ++ name
+
+  
+{{content}}
+???
+- Here we created a more complicated action, it reads a line from the standard input and uses the result to print something
+- This is something that we couldn't have done only with `Applicative`
+- But as we know from Scala, once you start using monads we get a whole lot of `bind` applications
+- Just like in Scala, Haskell special syntactic sugar monads, it's called `do` notation
+--
+getNameAndGreet' = do
+  name <- getName
+  putStrLn $ "Hello " ++ name
+
+???
+- Although `do` notation is similar to Scala's `for` comprehensions, but there are some differences that makes quite a bit nicer
+- We won't get into the details, but we can give an example
+---
+
+`do` Notation
+
+```
+script :: IO ()
+script = do
+  cd "/tmp"
+  mkdir "test"
+  output "test/foo" "Hello, world!"
+  stdout (input "test/foo")
+  rm "test/foo"
+  rmdir "test"
+```
+.footnote[http://www.haskellforall.com/2015/01/use-haskell-for-shell-scripting.html]
+
+???
+- This is real code, using a library called Turtle
+- The Turtle library let's you do shell scripting in Haskell
+- As you can see, this codes reads pretty much like an imperative language
+- If we had something similar implemented with Scala's `for` comprehensions, you'd have something like this
+--
+
+```scala
+val script = for {
+  _ <- cd("/tmp")
+  _ <- mkdir("test")
+  _ <- output("test/foo", "Hello, world!")
+  _ <- stdout(input("test/foo"))
+  _ <- rm("test/foo")
+  _ <- rmdir("test")
+} yield ()
+```
+???
+- Which also reads as an imperative program, but it's not as nice as the Haskell version
+- Back to our issue with side effects
+- So far, all we have is a way to create IO actions, but as we said before, they are not doing anything, they are just values
+- How do we run them?
+---
+Running IO
+
+```
+main :: IO ()
+main = putStrLn "Hello World!"
+```
+
+- The runtime executes the `main` action
+
+- But the code is referentially transparent
+
+- `>>=` takes care of sequencing in a lazy environment
+
+???
+- This is the code from one of the first slides
+- If we run this program, it actually prints to standard output
+- What happens is that when the Haskell runtime sees definition called `main` with type `IO ()`, it takes the  action and actually executes it
+- So everything we done in the code is pure, the runtime is the one that actually does side effects
+- And that's all we need to build programs that actually do stuff
+---
+Living in `IO`
+
+- An effect system
+
+- `IO` values = code as data
+
+- Hard to reason inside `IO`
+
+- No effect granularity
+???
+- We actually has some very nice properties here
+- First side effecting code is marked as such by the compiler, if we don't see the `IO` type in the signature then it's pure
+- Second, because `IO` are just plain values, we can manipulate them as we want, giving us the power of "code as data"
+- But since `IO` can be very imperative, inside an `IO` it's hard to reason about code
+- `IO` is a catch-all for all possible effects, if we want to allow just some side effect (but not launching) missiles, we need some other type
+- Anyways, we are now ready to write our server application
+---
 
  
  

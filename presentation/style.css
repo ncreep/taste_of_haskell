@@ -120,6 +120,11 @@ a {
 	border-radius: 5px;
 }
 
+.tweet-imperative img {
+	width: 500px;
+	border-radius: 5px;
+}
+
 body {
 	font-family: arial, sans-serif;
 	font-weight: 400;
