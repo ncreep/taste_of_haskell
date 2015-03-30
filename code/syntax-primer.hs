@@ -70,22 +70,6 @@ timeline = Timeline "foo" 15
 update = StatusUpdate "foo" "like, whatever"
 search = Search "I dunno"
 
-data SearchTwitter' = SearchTwitter' String String String Integer Integer
-
-data SearchTwitter = SearchTwitter { query :: String
-                                   , lang :: String 
-                                   , locale :: String
-                                   , count :: Integer 
-                                   , sinceId :: Integer
-                                   } deriving (Eq, Show)
-                                   
-st = SearchTwitter { query = "I dunno"
-                   , lang = "en"
-                   , locale = "uk"
-                   , count = 50
-                   , sinceId = 123456}
-
-q = query st
                                    
 newtype TweetId = TweetId { id :: Integer }
 
