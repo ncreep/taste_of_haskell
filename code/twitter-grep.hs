@@ -80,12 +80,9 @@ grepTweets :: String -> [Tweet] -> [Tweet]
 grepTweets pattern = filter $ (grep pattern) . text 
 
 -- Generating the Twitter feed url for the given user and tweets limit
-feedUrl :: [Char] -> Int -> [Char]
-feedUrl user limit = 
-     "https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=" 
-  ++ user
-  ++ "&count="
-  ++ (show limit)
+feedUrl :: String -> [Char]
+feedUrl user = 
+     "https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=" ++ user
   
 -- An HTML template for a single tweet: embedding the tweet ID into a single 'div' tag
 tweetDiv :: Tweet -> Html
@@ -102,9 +99,9 @@ htmlTemplate tweets = docTypeHtml $ do
 
 -- Fetches the Twitter timeline for the given user, using the Twitter API
 -- Note that the Twitter API provides at most 200 entries in the result set
-timeline :: Config -> String -> Int -> IO (Maybe [Tweet])
-timeline config user limit = do
-  req       <- parseUrl $ feedUrl user limit
+timeline :: Config -> String -> IO (Maybe [Tweet])
+timeline config user = do
+  req       <- parseUrl $ feedUrl user
   signedReq <- signOAuth (oauth config) (credential config) req
   resp      <- withManager $ httpLbs signedReq
   let body   = responseBody resp
@@ -116,9 +113,8 @@ startServer config = scotty 3000 $ do
   -- The main path for the application, applying grep to a user's timeline
   get "/grep-tweets/:user" $ do
     user        <- S.param "user"
-    limit       <- S.param "limit"
     pattern     <- S.param "pattern"
-    maybeTweets <- liftIO $ timeline config user limit
+    maybeTweets <- liftIO $ timeline config user
     
     let response = case maybeTweets of
           Nothing     -> h1 "Failed to fetch tweets"
