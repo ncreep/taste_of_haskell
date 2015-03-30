@@ -316,10 +316,10 @@ timeline :: TwitterAPI
 timeline = Timeline "Keyser" 15
 
 update :: TwitterAPI
-update = StatusUpdate "Keyser" "like, whatever"
+update = StatusUpdate "Keyser" "And like that... he's gone"
 
 search :: TwitterAPI
-search = Search "I dunno"
+search = Search "Who is Keyser Soze?"
 
 ???
 - Note that, unlike Scala, there is no subtyping here, so all values have the same type, `TwitterAPI`
@@ -445,7 +445,8 @@ Search :: String -> TwitterAPI
 
 pure Search :: Maybe (String -> TwitterAPI)
 
-pure Search <*> Just "I dunno" -- Just (Search "I dunno")
+pure Search <*> Just "Who is Keyser Soze?" 
+-- Just (Search "Who is Keyser Soze?")
 
 {{content}}
 ```
@@ -455,7 +456,7 @@ pure Search <*> Just "I dunno" -- Just (Search "I dunno")
 - But the whole `pure ... <*>`, is just a map
 - We can define an operator that does this and this becomes
 --
-Search <$> Just "I dunno"
+Search <$> Just "Who is Keyser Soze?"
 ???
 - The `<$>` stands for `fmap`
 - Let's try a more complicated example

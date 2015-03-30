@@ -66,11 +66,10 @@ data TwitterAPI = Timeline User Integer
                 | Search String 
                 deriving (Eq, Show)
 
-timeline = Timeline "foo" 15
-update = StatusUpdate "foo" "like, whatever"
-search = Search "I dunno"
+timeline = Timeline "Keyser" 15
+update = StatusUpdate "Keyser" "And like that... he's gone"
+search = Search "Who is Keyser Soze?"
 
-                                   
 newtype TweetId = TweetId { id :: Integer }
 
 data Maybe a = Just a | Nothing deriving (Eq, Show)
@@ -104,11 +103,11 @@ instance Applicative Maybe where
   Just f <*> Just x = Just $ f x
   _      <*> _      = Nothing
 
-maybeSearch = pure Search <*> Just "I dunno" -- Just (Search "I dunno")
+maybeSearch = pure Search <*> Just "Who is Keyser Soze?" -- Just (Search "Who is Keyser Soze?")
 maybeTimeline = pure Timeline <*> Just "Keyser" <*> Just 5 -- Just (Timeline "Keyser" 5)
 maybeTimeline' = pure Timeline <*> Nothing <*> Just 5 -- Nothing
 
-maybeSearch' = Search <$> Just "I dunno"
+maybeSearch' = Search <$> Just "Who is Keyser Soze?"
 maybeTimeline'' = Timeline <$> Just "Keyser" <*> Just 5
 
 dropFirst = Just 3 *> Just 5
