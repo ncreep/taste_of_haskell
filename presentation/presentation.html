@@ -88,8 +88,8 @@ layout: false
 ---
 
 ## How?
-
-Twitter-grep, a small server that:
+  
+`twitter-grep`, a small server that:
 
 - Accepts GET (@twitter-name, regex)
 
@@ -126,7 +126,7 @@ Haskell Syntax Primer
 - It should be enough that you'll be able to follow along with the examples we're going to see further down the road
 
 ---
-Definitions
+## Definitions
 ```
 
 x = 3
@@ -182,7 +182,7 @@ map' f (h:t) = f h : map' f t
 - So it is almost always possible (but not always recommended) to omit type signatures and the compiler just infers it
 - If we actually let the compiler infer the types we get the following:
 ---
-Definitions
+## Definitions
 ```
 x :: Integer
 x = 3
@@ -218,7 +218,7 @@ map' f (h:t) = f h : map' f t
 - This actually works very nicely with function application syntax
 - Let's see an example
 ---
-Currying
+## Currying
 ```
 mapPlusTwo :: [Integer] -> [Integer]
 mapPlusTwo = map (\x -> x + 2)
@@ -245,7 +245,7 @@ mapPlusTwo' = map (+ 2)
 mapPlusTwo [1, 2, 3] -- [3, 4, 5]
 
 ---
-Custom operators
+## Custom operators
 ```
 ($) :: (a -> b) -> a -> b 
 f $ x = f x
@@ -274,7 +274,7 @@ map (+ 2) $ filter (3 <) [1, 2, 3, 4, 5]
 - But first let's start with a Scala example
 
 ---
-Algebraic data types
+## Algebraic data types
 ```scala
 type User = String
 
@@ -293,7 +293,7 @@ case class Search(query: String) extends TwitterAPI
 - Now for the (sort of) equivalent Haskell code
 
 ---
-Algebraic data types
+## Algebraic data types
 ```
 type User = String
 
@@ -330,7 +330,7 @@ search = Search "Who is Keyser Soze?"
 - We can encode typeclasses in Scala in the following way
 - Suppose we want a `Functor` typeclass
 ---
-Typeclasses
+## Typeclasses
 ```scala
 trait Functor[F[_]] {
   def map[A, B](fa: F[A])(f: A => B): F[B]
@@ -360,7 +360,7 @@ addWorld(Option("Hello")) // Some(Hello World!)
 - Typeclasses were actually invented for Haskell, and so it has special syntax for it
 - For example, the `Functor` typeclass is the defined as follows
 ---
-Typeclasses
+## Typeclasses
 ```
 class Functor f where
   fmap :: (a -> b) -> f a -> f b
@@ -408,7 +408,7 @@ addWorld $ Just "Hello" -- Just "Hello World!"
 - But it is the typeclasses behind Scalaz's `Validation`
 - It is roughly defined like this:
 ---
-More typeclasses
+## More typeclasses
 ```
 class Functor f => Applicative f where
     pure :: a -> f a
@@ -441,7 +441,7 @@ instance Applicative Maybe where
 - In all other cases we just return `Nothing`
 - Let's see what can we do with it
 ---
-Using `Applicative`
+## Using `Applicative`
 ```
 Search :: String -> TwitterAPI
 
@@ -463,7 +463,7 @@ Search <$> Just "Who is Keyser Soze?"
 - The `<$>` stands for `fmap`
 - Let's try a more complicated example
 ---
-Using `Applicative`
+## Using `Applicative`
 
 ```
 Timeline :: User -> Integer -> TwitterAPI
@@ -515,7 +515,7 @@ The Parser
 - For what we need, it's actually not that much of an effort
 
 ---
-The parsing function
+## The parsing function
 ```
 newtype Parser a = Parser { parse :: String -> [(a, String)] }
 ```
@@ -552,7 +552,7 @@ satisfy predicate = Parser $ \s ->
 - If the predicate fails, the whole parse fails, so the result is the empty list
 - With this function in hand, we can implement a number of simple parsers
 ---
-Some simple parsers
+## Some simple parsers
 ```
 char :: Char -> Parser String
 char c = satisfy (c ==)
@@ -580,7 +580,7 @@ noneOf cs = satisfy $ \c -> notElem c cs
 - `alphaNum` matches any alphanumeric character
 - In `oneOf` and `noneOf` we are taking a list of characters and creating a predicate that checks the presence (or abscence) of any of the characters in the stream
 ---
-Using the parsers
+## Using the parsers
 
 ```
 p1 = char 'a'
@@ -603,7 +603,7 @@ parse p2 "def" -- []
 - We start with `Functor`
 
 ---
-The infrastructure
+## The infrastructure
 ```
 instance Functor Parser where
   fmap f (Parser p) = Parser $ \s -> 
@@ -635,7 +635,7 @@ instance Applicative Parser where
 - When we use sequential application, we run both parsers one after the other
 - This gives us a way to combine two parser into a new one, let's see an example
 ---
-Combining parsers
+## Combining parsers
 ```
 (&) :: Parser String -> Parser String -> Parser String
 (&) pa pb = (++) <$> pa <*> pb
@@ -664,7 +664,7 @@ string (c:cs) = char c & string cs
 - We create a parser with the first character and combine it using `&` with a parser created with the rest of the characters
 - We'll need another typeclass to continue, the `Alternative` class
 ---
-More infrastructure
+## More infrastructure
 ```
 class Applicative f => Alternative f where
   empty :: f a
@@ -699,7 +699,7 @@ instance Alternative Parser where
 - We don't need to implement `some` and `many` since they have default implementation in terms of the alternation operator
 - With this in hand we can combine parsers in a new way, for example
 ---
-Using the new combinators
+## Using the new combinators
 ```
 string "Keyser" <|> string "Soze"
 
@@ -735,7 +735,7 @@ has p = star dot *> p <* star dot
 - The last thing we need for our parser combinator library is a way to actually run parsers on strings
 - We do this with the match function
 ---
-Running a parser
+## Running a parser
 ```
 match :: Parser a -> String -> [a]
 match p str = map fst $ parse (p <* eof) str
@@ -782,7 +782,7 @@ The regex-like language
 - So let's write down an algebraic data type for our regex-like language and see where it leads us
 ---
 
-The Regex ADT
+## The Regex ADT
 
 ```
 data Regex = 
@@ -817,7 +817,7 @@ And (OneOf "Kk") (And (Str "eyser") (And (Plus Dot)
 - Now that we have this specification, we can write an evaluator
 - With what we already implemented it almost writes itself
 ---
-The evaluator
+## The evaluator
 ```
 regexToParser :: Regex -> Parser String
 regexToParser regex = case regex of
@@ -850,7 +850,7 @@ match p "Keyser oze"  -- []
 - Now comes the more difficult part, we need to write a parser that takes a regex string and convert it into a `Regex` ADT value
 
 ---
-Parsing Regex
+## Parsing Regex
 ???
 - Let's do it step by step
 --
@@ -937,7 +937,7 @@ notRegexOr = andRegexes <$> some (regexString <|> regexDot <|> regexOneOf
 - I'll skip it's definition for now
 ---
 
-Combining all together
+## Combining all together
 
 ```
 toRegex :: String -> Parser String
@@ -987,10 +987,10 @@ IO
 ???
 - The quote here, although is not completely serious, does have some truth in it
 - So far, everything we've done is pure
-- But I've promised you "real world" stuff
+- But I've promised you "real world" stuff, and that comes with side effects
 - So let's do that
 ---
-The problem:
+## Side effect in Haskell
 
 - Haskell is lazy
 
@@ -1002,12 +1002,12 @@ The problem:
 - In a lazy setting, running something that has side effects is not recommended, since it's very hard to predict when the side effects will run
 --
 
-The solution: IO actions
+- The solution: IO actions
 
 ???
 - The solution comes in the form of IO actions, let's see it with an example
 ---
-IO actions
+## IO actions
 ```
 hello :: IO ()
 hello = putStr "Hello"
@@ -1051,7 +1051,7 @@ addGreeting = fmap ("Hello " ++) getName
 - `Functor` and `Applicative` don't have any function that does that
 - Enter the dreaded `Monad`
 ---
-The `Monad` class
+## The `Monad` class
 
 ```
 class Applicative m => Monad m where
@@ -1089,7 +1089,7 @@ getNameAndGreet' = do
 - We won't get into the details, but we can give an example
 ---
 
-`do` Notation
+## `do` Notation
 
 ```
 script :: IO ()
@@ -1126,7 +1126,7 @@ val script = for {
 - So far, all we have is a way to create IO actions, but as we said before, they are not doing anything, they are just values
 - How do we run them?
 ---
-Running IO
+## Running IO
 
 ```
 main :: IO ()
@@ -1146,7 +1146,7 @@ main = putStrLn "Hello World!"
 - So everything we done in the code is pure, the runtime is the one that actually does side effects
 - And that's all we need to build programs that actually do stuff
 ---
-Living in `IO`
+## Living in `IO`
 
 - An effects system
 
@@ -1176,7 +1176,7 @@ Haskell in the Real World
 - As a reminder, what we want to do is to have a server fetching tweets from the Twitter API and grepping
 - Let's start with the data model
 ---
-The data model
+## The data model
 ```
 data Tweet = Tweet { text :: String
                    , id_str :: String
@@ -1209,7 +1209,7 @@ grepTweets pattern = filter $ (grep pattern) . text
 - Any tweets that don't pass the grep will be filtered out
 - Now we need some way of fetching the tweets
 ---
-Fetching the tweets
+## Fetching the tweets
 
 ```
 timeline :: Config -> String -> IO (Maybe [Tweet])
@@ -1237,7 +1237,7 @@ timeline config user = do
 - Now we need to hook up a server
 
 ---
-Scotty
+## Scotty
 
 ```
 main = scotty 3000 $ do
@@ -1251,7 +1251,7 @@ main = scotty 3000 $ do
 - Our application is only slightly more complicated than this
 ---
 
-Twitter-grep server
+## `twitter-grep` server
 
 ```
 main :: IO ()
@@ -1285,7 +1285,7 @@ main = do
 - And that's it, our application is finished and ready to run
 
 ---
-A running example
+## A running example
 
 .center[.twitter-grep[![](twitter_grep.png)]]
 
@@ -1296,7 +1296,7 @@ A running example
 - Let's do another one
 ---
 
-A running example
+## A running example
 
 .center[.twitter-grep-fibs[![](twitter_grep_fibs.png)]]
 
@@ -1307,7 +1307,7 @@ When I said no Fibonacci, I lied...
 - I hope that you got some feeling of what it's like to program in Haskell
 ---
 
-Resources
+## Resources
 
 The full code and presentation:
 TODO
@@ -1321,7 +1321,7 @@ Further reading:
 - Haskell For All ([blog](http://www.haskellforall.com/))
 - The turtle library ([tutorial](http://hackage.haskell.org/package/turtle-1.0.0/docs/Turtle-Tutorial.html))
 
-.center[Questions?]
+.center[.questions[Questions?]]
 
 
 
