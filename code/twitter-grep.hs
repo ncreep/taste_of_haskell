@@ -82,8 +82,8 @@ grepTweets pattern = filter $ (grep pattern) . text
 
 -- Generating the Twitter feed url for the given user and tweets limit
 feedUrl :: String -> [Char]
-feedUrl user = 
-     "https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=" ++ user
+feedUrl user = -- note, setting tweet limit to 200
+     "https://api.twitter.com/1.1/statuses/user_timeline.json?count=200&screen_name=" ++ user
   
 -- An HTML template for a single tweet: embedding the tweet ID into a single 'div' tag
 tweetDiv :: Tweet -> Html
@@ -130,7 +130,7 @@ main = do
       user        <- S.param "user"
       pattern     <- S.param "pattern"
       maybeTweets <- liftIO $ timeline config user
-      
+
       let response = case maybeTweets of
             Nothing     -> h1 "Failed to fetch tweets"
             Just tweets -> htmlTemplate $ grepTweets pattern tweets
