@@ -927,8 +927,9 @@ singleCharRegex = regexDot <|> regexChar <|> regexOneOf <|> regexNoneOf
 ???
 - This just matches any of the patterns from before that match a single character
 --
-notRegexOr = andRegexes <$> some (regexString <|> regexDot <|> regexOneOf
-                              <|> regexNoneOf <|> regexStar <|> regexPlus)
+notRegexOr = andRegexes <$> some (regexString <|> regexDot 
+                              <|> regexOneOf <|> regexNoneOf 
+                              <|> regexStar <|> regexPlus)
 
 ???
 - This matches any of the non-`Or` patterns from befor, at least once or more
@@ -1315,10 +1316,15 @@ TODO
 
 Further reading:
 - Learn You a Haskell ([free online book](http://learnyouahaskell.com/))
+
 - Real World Haskell ([free online book](http://book.realworldhaskell.org/read/))
+
 - A brief introduction to Haskell ([FP in Scala wiki](https://github.com/fpinscala/fpinscala/wiki/A-brief-introduction-to-Haskell,-and-why-it-matters))
+
 - Typeclassopedia ([wiki](https://wiki.haskell.org/Typeclassopedia))
+
 - Haskell For All ([blog](http://www.haskellforall.com/))
+
 - The turtle library ([tutorial](http://hackage.haskell.org/package/turtle-1.0.0/docs/Turtle-Tutorial.html))
 
 .center[.questions[Questions?]]

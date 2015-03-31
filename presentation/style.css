@@ -17,10 +17,14 @@ code {
 	-moz-border-radius: 5px;
 	-web-border-radius: 5px;
 	border-radius: 5px;
+  font-weight: bold;
+  font-size: 1.0em;
+  font-family: 'Courier New', monospace;
 }
 
-code {
-  font-weight: bold;
+.remark-code {
+  font-weight: 900;
+  font-size: 19.5px;
 }
 
 pre code, .codeTable {
@@ -28,29 +32,24 @@ pre code, .codeTable {
 	background-color: #f8f8ff;
 }
 
-.remark-slide code {
-	background: #f8f8ff;
-}
-
 .bigCode .remark-inline-code {
   font-size: 1.5em;
-}
-
-.smallCode {
-	font-size: 0.8em;
 }
 
 a {
 	text-decoration: none;
 }
 
+.rightFloat, .leftFloat  {
+  font-size: 0.8em;
+	margin-top: 10em;
+}
+
 .rightFloat {
-	margin-top: 10.8em;
 	float: right;
 }
 
 .leftFloat {
-	margin-top: 10.8em;
 	float: left;
 }
 
