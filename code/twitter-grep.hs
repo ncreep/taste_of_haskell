@@ -9,6 +9,7 @@ import Network.HTTP.Conduit
 import Web.Authenticate.OAuth
 import Data.Aeson
 import GHC.Generics
+import Data.Maybe
 import Control.Applicative
 import Control.Monad.Trans (liftIO)
 import Control.Monad (forM_)
@@ -107,8 +108,8 @@ timeline config user = do
   let body   = responseBody resp
   return $ decode body
 
-renderHtml :: Html -> ActionM ()
-renderHtml = S.html . renderHtml
+asHtml :: Html -> ActionM ()
+asHtml = S.html . renderHtml
   
 -- Starting the server for the application.
 startServer :: Config -> IO ()
@@ -123,20 +124,22 @@ startServer config = scotty 3000 $ do
           Nothing     -> h1 "Failed to fetch tweets"
           Just tweets -> htmlTemplate $ grepTweets pattern tweets
           
-    renderHtml response
+    asHtml response
     
   -- An auxiliary js file to render tweets
   get "/twitter.js" $ file "twitter.js"
   
 -- Trying to read the configuration file from 'config.json'
-readConf :: IO (Maybe Config)
-readConf = decode <$> readFile "config.json"
+readConf :: IO Config
+readConf = do
+  conf <- decode <$> readFile "config.json"
+  case conf of
+    Nothing -> error "Failed to parse config.json"
+    Just c -> return c
 
 -- Starting the application: first reading the configuration data from 'config.json',
 -- then starting the server
 main :: IO ()
 main = do
-  maybeConf <- readConf
-  case maybeConf of 
-    Nothing     -> putStrLn "Failed to parse config.json"
-    Just config -> startServer config
+  config <- readConf
+  startServer config
