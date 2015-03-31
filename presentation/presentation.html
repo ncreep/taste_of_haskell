@@ -1011,7 +1011,7 @@ IO
 ## IO actions
 ```
 hello :: IO ()
-hello = putStr "Hello"
+world = putStrLn "World!"
 
 {{content}}
 ```
@@ -1023,8 +1023,9 @@ hello = putStr "Hello"
 - Since these are values we can manipulate them as such
 --
 world :: IO ()
-world = putStrLn " World!"
+world = putStrLn "World!"
 
+helloWorld :: IO ()
 helloWorld = hello *> world
 
 
