@@ -48,7 +48,6 @@ data Tweet = Tweet { text :: String
                    } deriving (Show, Generic)
         
 instance FromJSON Tweet
-instance ToJSON Tweet
 
 -- Configuration for the application: the credentials used to access the Twitter API
 -- The fields should match the fields in a 'config.json' file to be provided to the application
@@ -59,7 +58,6 @@ data Config = Config { accessToken :: String
                      } deriving (Show, Generic)
 
 instance FromJSON Config
-instance ToJSON Config
 
 {- Pure functions -}
 

@@ -1078,6 +1078,7 @@ getNameAndGreet = getName >>= \name ->
 ???
 - Here we created a more complicated action, it reads a line from the standard input and uses the result to print something
 - This is something that we couldn't have done only with `Applicative`
+- Note that the `putStrLn` action cannot run before `getName` since it has to wait for the `name` argument provided by `getName`
 - But as we know from Scala, once you start using monads we get a whole lot of `bind` applications
 - Just like in Scala, Haskell special syntactic sugar monads, it's called `do` notation
 --
@@ -1184,7 +1185,6 @@ data Tweet = Tweet { text :: String
                    } deriving (Show, Generic)
         
 instance FromJSON Tweet
-instance ToJSON Tweet
 
 
 {{content}}
