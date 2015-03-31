@@ -99,6 +99,8 @@ Twitter-grep, a small server that:
 
 - Serves an HTML page with the results
 
+- No Fibonacci!
+
 ???
 
 - This is going to be an example driven tutorial
@@ -115,7 +117,7 @@ class: center, middle, transition
 
 Haskell Syntax Primer
 
-.tweet-syntax[![](tweet_syntax.png)]
+.tweet[![](tweet_syntax.png)]
 
 ???
 
@@ -500,7 +502,7 @@ class: center, middle, transition
 
 The Parser
 
-.tweet-regex[![](tweet_regex.png)]
+.tweet[![](tweet_regex.png)]
 
 ???
 
@@ -772,7 +774,7 @@ class: center, middle, transition
 
 The regex-like language
 
-.tweet-adt[![](tweet_adt.png)]
+.tweet[![](tweet_adt.png)]
 
 ???
 - Before we start our regex engine, we need to specify what exactly we need
@@ -980,7 +982,7 @@ class: center, middle, transition
 
 IO
 
-.tweet-imperative[![](tweet_imperative.png)]
+.tweet[![](tweet_imperative.png)]
 
 ???
 - The quote here, although is not completely serious, does have some truth in it
@@ -1146,7 +1148,7 @@ main = putStrLn "Hello World!"
 ---
 Living in `IO`
 
-- An effect system
+- An effects system
 
 - `IO` values = code as data
 
@@ -1162,23 +1164,164 @@ Living in `IO`
 - Anyways, we are now ready to write our server application
 ---
 
- 
- 
+class: center, middle, transition
+
+Haskell in the Real World
+
+.tweet[![](tweet_lambda.png)]
+
+???
+- You might suspect, especially if you used Scalaz, that if "real world" stuff is happening in monads, that our code is going to get scary
+- That's actually not the case, Haskell's syntax and type inference makes things like the above non-existant
+- As a reminder, what we want to do is to have a server fetching tweets from the Twitter API and grepping
+- Let's start with the data model
+---
+The data model
+```
+data Tweet = Tweet { text :: String
+                   , id_str :: String
+                   } deriving (Show, Generic)
+        
+instance FromJSON Tweet
+instance ToJSON Tweet
 
 
+{{content}}
+```
+
+???
+- We have some new syntax here, it's called record syntax
+- We given names to the field, and it automatically generates getter functions with these names
+- Since we are going to get tweets from the Twitter API, we'll need some JSON support here
+- We'll use a JSON library called `aeson`
+- That's why we have the two instances here, they magically create JSON serializers and deserializers for us
+- All that's needed is to add the `deriving Generic` clause here, the compiler takes care of the rest
+- The core functionality of the application is grepping, and we need one function for this
+--
+grepTweets :: String -> [Tweet] -> [Tweet]          
+grepTweets pattern = filter $ (grep pattern) . text
+
+???
+- We have a new operator here, `.`, which is function composition
+- It reads as follows: given a pattern create a function that turn a list of tweets into a new list of tweets
+- We do so with the filter function
+- The filter extracts the `text` of the tweet, and then greps it with the pattern
+- Any tweets that don't pass the grep will be filtered out
+- Now we need some way of fetching the tweets
+---
+Fetching the tweets
+
+```
+timeline :: Config -> String -> IO (Maybe [Tweet])
+timeline config user = do
+  req       <- parseUrl $ feedUrl user
+  signedReq <- signOAuth (oauth config) (credential config) req
+  resp      <- withManager $ httpLbs signedReq
+  let body   = responseBody resp
+  return $ decode body
+```
+
+???
+- So that's the function, I won't show the full implementation of the other parts (you can see the full implementation on Github)
+- I want to get a feel for how one does dirty stuff like network communication in Haskell
+- Let's see how it works
+- Since we want to call the outside world, we have to create an IO action
+- It reads like imperative code:
+- Create an http request for the feed of the user (`limit` just limits the nubmer of tweets
+- Sign the request with the credentials that we get from a configuration object
+- Make the actual request
+- Extract the request body
+- Use the JSON decoder to decode it into a list of `Tweet`s wrapped in a `Maybe`
+- Again, we are just describing what we need here, we are not actually running the action
+- Note that the Twitter API limits the result set to 200 tweets
+- Now we need to hook up a server
+
+---
+Scotty
+
+```
+main = scotty 3000 $ do
+  get "/" $ do
+    html "Hello World!"
+```
+???
+- We'll be using the Scotty web framework, it's a minimalistic web framework inspired by Ruby's Sinatra
+- This is a "hello world" in Scotty
+- It matches the GET request on the root path and responds with "hello world", simple as that
+- Our application is only slightly more complicated than this
+---
+
+Twitter-grep server
+
+```
+main :: IO ()
+main = do
+  config <- readConf
+  scotty 3000 $ do
+    get "/grep-tweets/:user" $ do
+      user        <- S.param "user"
+      pattern     <- S.param "pattern"
+      maybeTweets <- liftIO $ timeline config user
+      
+      let response = case maybeTweets of
+            Nothing     -> h1 "Failed to fetch tweets"
+            Just tweets -> htmlTemplate $ grepTweets pattern tweets
+            
+      asHtml response
+      
+    get "/twitter.js" $ file "twitter.js"
+```
+???
+- First we read the configuration for the application, it's in a file, so we are doing IO in the process
+- Then we start the server
+- Let's start from the bottom, we are serving a static JavaScript file, this will be used for nice rendering of the tweets we'll be serving
+- On the top we are responding to GET requests on the `grep-tweets` path
+- We extract the `user` and `pattern` parameters from the current request
+- Next, we fetch the user's timeline
+- The `liftIO` call is a bit of boilerplate needed since Scotty does not live directly in the IO monad, but in some intermediate structure
+- Next we handle the tweets, the first case handles failure, the second applies our grep function and puts in an HTML template
+- The HTML template is actually written in pure Haskell, but we'll skip it for now
+- We then render the response as an HTML response
+- And that's it, our application is finished and ready to run
+
+---
+A running example
+
+.center[.twitter-grep[![](twitter_grep.png)]]
+
+???
+
+- In here we are querying the user `implict_ly`, which tweets about Scala related software releases
+- We are filtering down to releses that mention Specs2 2.4 and Scalaz
+- Let's do another one
+---
+
+A running example
+
+.center[.twitter-grep-fibs[![](twitter_grep_fibs.png)]]
+
+When I said no Fibonacci, I lied...
+???
+
+- This concludes our exploration of Haskell
+- I hope that you got some feeling of what it's like to program in Haskell
+---
+
+Resources
+
+The full code and presentation:
+TODO
 
 
+Further reading:
+- Learn You a Haskell ([free online book](http://learnyouahaskell.com/))
+- Real World Haskell ([free online book](http://book.realworldhaskell.org/read/))
+- A brief introduction to Haskell ([FP in Scala wiki](https://github.com/fpinscala/fpinscala/wiki/A-brief-introduction-to-Haskell,-and-why-it-matters))
+- Typeclassopedia ([wiki](https://wiki.haskell.org/Typeclassopedia))
+- Haskell For All ([blog](http://www.haskellforall.com/))
+- The turtle library ([tutorial](http://hackage.haskell.org/package/turtle-1.0.0/docs/Turtle-Tutorial.html))
 
-
-
-
-
-
-
-
-
-
-
+.center[Questions?]
 
 
 

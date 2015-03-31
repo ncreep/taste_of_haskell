@@ -104,25 +104,17 @@ a {
 	border-radius: 10px;
 }
 
-.tweet-syntax img {
+.tweet img {
 	width: 500px;
 	border-radius: 5px;
 }
 
-.tweet-regex img {
-	width: 500px;
-	border-radius: 5px;
+.twitter-grep img, .twitter-grep-fibs img {
+  margin-top: 20px;
 }
 
-
-.tweet-adt img {
-	width: 500px;
-	border-radius: 5px;
-}
-
-.tweet-imperative img {
-	width: 500px;
-	border-radius: 5px;
+.twitter-grep-fibs img {
+  width: 800px;
 }
 
 body {
@@ -136,7 +128,7 @@ ul {
 
 h1,h2,h3 {
 	font-family: arial, sans-serif;
-	font-weight: 400;
+	font-weight: bold;
 	margin: 5px 0px;
 }
 
