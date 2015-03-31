@@ -111,24 +111,6 @@ timeline config user = do
 asHtml :: Html -> ActionM ()
 asHtml = S.html . renderHtml
   
--- Starting the server for the application.
-startServer :: Config -> IO ()
-startServer config = scotty 3000 $ do
-  -- The main path for the application, applying grep to a user's timeline
-  get "/grep-tweets/:user" $ do
-    user        <- S.param "user"
-    pattern     <- S.param "pattern"
-    maybeTweets <- liftIO $ timeline config user
-    
-    let response = case maybeTweets of
-          Nothing     -> h1 "Failed to fetch tweets"
-          Just tweets -> htmlTemplate $ grepTweets pattern tweets
-          
-    asHtml response
-    
-  -- An auxiliary js file to render tweets
-  get "/twitter.js" $ file "twitter.js"
-  
 -- Trying to read the configuration file from 'config.json'
 readConf :: IO Config
 readConf = do
@@ -142,4 +124,18 @@ readConf = do
 main :: IO ()
 main = do
   config <- readConf
-  startServer config
+  scotty 3000 $ do
+    -- The main path for the application, applying grep to a user's timeline
+    get "/grep-tweets/:user" $ do
+      user        <- S.param "user"
+      pattern     <- S.param "pattern"
+      maybeTweets <- liftIO $ timeline config user
+      
+      let response = case maybeTweets of
+            Nothing     -> h1 "Failed to fetch tweets"
+            Just tweets -> htmlTemplate $ grepTweets pattern tweets
+            
+      asHtml response
+      
+    -- An auxiliary js file to render tweets
+    get "/twitter.js" $ file "twitter.js"
