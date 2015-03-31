@@ -18,6 +18,6 @@ window.twttr = (function(d, s, id) {
 window.addEventListener('load', function(){
   var tweets = document.getElementsByClassName("tweet");
   Array.prototype.forEach.call(tweets, function(t) {
-    twttr.widgets.createTweet(t.id, t)
+    twttr.widgets.createTweet(t.id, t, {cards: 'hidden'})
   })
 });
