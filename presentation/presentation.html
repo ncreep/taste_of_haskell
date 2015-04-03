@@ -219,6 +219,9 @@ map' f (h:t) = f h : map' f t
 ---
 ## Currying
 ```
+map :: (a -> b) -> [a] -> [b]
+
+
 mapPlusTwo :: [Integer] -> [Integer]
 mapPlusTwo = map (\x -> x + 2)
 
@@ -244,7 +247,7 @@ mapPlusTwo' = map (+ 2)
 mapPlusTwo [1, 2, 3] -- [3, 4, 5]
 
 ---
-## Custom operators
+## Custom Operators
 ```
 ($) :: (a -> b) -> a -> b 
 f $ x = f x
@@ -273,7 +276,7 @@ map (+ 2) $ filter (3 <) [1, 2, 3, 4, 5]
 - But first let's start with a Scala example
 
 ---
-## Algebraic data types
+## Algebraic Data Types
 ```scala
 type User = String
 
@@ -292,7 +295,7 @@ case class Search(query: String) extends TwitterAPI
 - Now for the (sort of) equivalent Haskell code
 
 ---
-## Algebraic data types
+## Algebraic Data Types
 ```
 type User = String
 
@@ -407,7 +410,7 @@ addWorld $ Just "Hello" -- Just "Hello World!"
 - But it is the typeclasses behind Scalaz's `Validation`
 - It is roughly defined like this:
 ---
-## More typeclasses
+## More Typeclasses
 ```
 class Functor f => Applicative f where
     pure :: a -> f a
@@ -424,6 +427,7 @@ class Functor f => Applicative f where
 - If we think of `f` as some sort of a container with an effect, than `pure` takes a plain value a puts in the container
 - The `<*>` is called "sequential application" the signature tells us what it does
 - If we have a function inside the "container", we can use sequential application to apply the function to another value inside another container
+- Of course, like many standard typeclasses, `Applicative` has some laws that it needs to obey, but we won't be going into them now
 - Let's implement this class for `Maybe`
 --
 
@@ -499,7 +503,7 @@ f <$> x1 <*> x2 <*> ... <*> xn
 ---
 class: center, middle, transition
 
-The Parser
+# The Parser
 
 .tweet[![](tweet_regex.png)]
 
@@ -514,7 +518,7 @@ The Parser
 - For what we need, it's actually not that much of an effort
 
 ---
-## The parsing function
+## The Parsing Function
 ```
 newtype Parser a = Parser { parse :: String -> [(a, String)] }
 ```
@@ -530,7 +534,7 @@ newtype Parser a = Parser { parse :: String -> [(a, String)] }
 - If the list of results is empty, then there is no way to parse the string
 
 --
-Advancing the stream
+Advancing the stream:
 ```
 satisfy :: (Char -> Bool) -> Parser String
 satisfy predicate = Parser $ \s ->
@@ -551,7 +555,7 @@ satisfy predicate = Parser $ \s ->
 - If the predicate fails, the whole parse fails, so the result is the empty list
 - With this function in hand, we can implement a number of simple parsers
 ---
-## Some simple parsers
+## Some Simple Parsers
 ```
 char :: Char -> Parser String
 char c = satisfy (c ==)
@@ -579,7 +583,7 @@ noneOf cs = satisfy $ \c -> notElem c cs
 - `alphaNum` matches any alphanumeric character
 - In `oneOf` and `noneOf` we are taking a list of characters and creating a predicate that checks the presence (or abscence) of any of the characters in the stream
 ---
-## Using the parsers
+## Using the Parsers
 
 ```
 p1 = char 'a'
@@ -602,7 +606,7 @@ parse p2 "def" -- []
 - We start with `Functor`
 
 ---
-## The infrastructure
+## The Infrastructure
 ```
 instance Functor Parser where
   fmap f (Parser p) = Parser $ \s -> 
@@ -634,7 +638,7 @@ instance Applicative Parser where
 - When we use sequential application, we run both parsers one after the other
 - This gives us a way to combine two parser into a new one, let's see an example
 ---
-## Combining parsers
+## Combining Parsers
 ```
 (&) :: Parser String -> Parser String -> Parser String
 (&) pa pb = (++) <$> pa <*> pb
@@ -663,7 +667,7 @@ string (c:cs) = char c & string cs
 - We create a parser with the first character and combine it using `&` with a parser created with the rest of the characters
 - We'll need another typeclass to continue, the `Alternative` class
 ---
-## More infrastructure
+## More Infrastructure
 ```
 class Applicative f => Alternative f where
   empty :: f a
@@ -698,7 +702,7 @@ instance Alternative Parser where
 - We don't need to implement `some` and `many` since they have default implementation in terms of the alternation operator
 - With this in hand we can combine parsers in a new way, for example
 ---
-## Using the new combinators
+## Using the New Combinators
 ```
 string "Keyser" <|> string "Soze"
 
@@ -734,7 +738,7 @@ has p = star dot *> p <* star dot
 - The last thing we need for our parser combinator library is a way to actually run parsers on strings
 - We do this with the match function
 ---
-## Running a parser
+## Running a Parser
 ```
 match :: Parser a -> String -> [a]
 match p str = map fst $ parse (p <* eof) str
@@ -750,7 +754,7 @@ match p str = map fst $ parse (p <* eof) str
 - These are all the combinators we'll need
 - To see that it actually works, we can run a simple example
 --
-A bigger example
+A bigger example:
 
 ```
 p = oneOf "Kk" & string "eyser" & plus dot & oneOf "Ss" & string "oze"
@@ -771,7 +775,7 @@ match p "KeyserSoze"  -- []
 ---
 class: center, middle, transition
 
-The regex-like language
+# The regex-like language
 
 .tweet[![](tweet_adt.png)]
 
@@ -781,7 +785,7 @@ The regex-like language
 - So let's write down an algebraic data type for our regex-like language and see where it leads us
 ---
 
-## The Regex ADT
+## The `Regex` ADT
 
 ```
 data Regex = 
@@ -805,7 +809,7 @@ data Regex =
 - `Or` and `And` match either or both of the given regexes
 - For example, the regex we seen before can be written as follows
 --
-For example
+For example:
 ```
 -- [Kk]eyser.+[Ss]oze
 
@@ -816,7 +820,7 @@ And (OneOf "Kk") (And (Str "eyser") (And (Plus Dot)
 - Now that we have this specification, we can write an evaluator
 - With what we already implemented it almost writes itself
 ---
-## The evaluator
+## The Evaluator
 ```
 regexToParser :: Regex -> Parser String
 regexToParser regex = case regex of
@@ -834,7 +838,7 @@ regexToParser regex = case regex of
 - Note the recursion in the `Star`, `Plus`, `Or` and `And`
 - We can use it on the regex from before
 --
-Running it
+Running it:
 ```
 regex = And (OneOf "Kk") (And (Str "eyser") (And (Plus Dot)
   (And (OneOf "Ss") (Str "oze"))))
@@ -849,7 +853,7 @@ match p "Keyser oze"  -- []
 - Now comes the more difficult part, we need to write a parser that takes a regex string and convert it into a `Regex` ADT value
 
 ---
-## Parsing Regex
+## Parsing `Regex`
 ???
 - Let's do it step by step
 --
@@ -937,7 +941,7 @@ notRegexOr = andRegexes <$> some (regexString <|> regexDot
 - I'll skip it's definition for now
 ---
 
-## Combining all together
+## Combining All Together
 
 ```
 toRegex :: String -> Parser String
@@ -960,7 +964,7 @@ grep regexStr target = not $ null matches
 - The whole thing succeeds if there is at least one possible match (`null` checks whether ther result is empty)
 - Let's run some examples
 --
-Running it
+Running it:
 
 ```
 grep "[Kk]eyser.+[Ss]oze|[^abc].*ton" "I am Keyser Soze..." -- True
@@ -980,7 +984,7 @@ grep "[Kk]eyser.+[Ss]oze|[^abc].*ton" "But so is Kobayashi" -- False
 
 class: center, middle, transition
 
-IO
+# IO
 
 .tweet[![](tweet_imperative.png)]
 
@@ -990,7 +994,7 @@ IO
 - But I've promised you "real world" stuff, and that comes with side effects
 - So let's do that
 ---
-## Side effect in Haskell
+## Side Effects In Haskell
 
 - Haskell is lazy
 
@@ -1007,7 +1011,7 @@ IO
 ???
 - The solution comes in the form of IO actions, let's see it with an example
 ---
-## IO actions
+## IO Actions
 ```
 hello :: IO ()
 world = putStrLn "World!"
@@ -1052,7 +1056,7 @@ addGreeting = fmap ("Hello " ++) getName
 - `Functor` and `Applicative` don't have any function that does that
 - Enter the dreaded `Monad`
 ---
-## The `Monad` class
+## The `Monad` Class
 
 ```
 class Applicative m => Monad m where
@@ -1168,7 +1172,7 @@ main = putStrLn "Hello World!"
 
 class: center, middle, transition
 
-Haskell in the Real World
+# Haskell in the Real World
 
 .tweet[![](tweet_lambda.png)]
 
@@ -1178,7 +1182,7 @@ Haskell in the Real World
 - As a reminder, what we want to do is to have a server fetching tweets from the Twitter API and grepping
 - Let's start with the data model
 ---
-## The data model
+## The Data Model
 ```
 data Tweet = Tweet { text :: String
                    , id_str :: String
@@ -1210,7 +1214,7 @@ grepTweets pattern = filter $ (grep pattern) . text
 - Any tweets that don't pass the grep will be filtered out
 - Now we need some way of fetching the tweets
 ---
-## Fetching the tweets
+## Fetching the Tweets
 
 ```
 timeline :: Config -> String -> IO (Maybe [Tweet])
@@ -1252,7 +1256,7 @@ main = scotty 3000 $ do
 - Our application is only slightly more complicated than this
 ---
 
-## `twitter-grep` server
+## `twitter-grep` Server
 
 ```
 main :: IO ()
@@ -1286,7 +1290,7 @@ main = do
 - And that's it, our application is finished and ready to run
 
 ---
-## A running example
+## A Running Example
 
 .center[.twitter-grep[![](twitter_grep.png)]]
 
@@ -1297,7 +1301,7 @@ main = do
 - Let's do another one
 ---
 
-## A running example
+## A Running Example
 
 .center[.twitter-grep-fibs[![](twitter_grep_fibs.png)]]
 
@@ -1340,7 +1344,7 @@ Further reading:
 		type="text/javascript">
 	</script>
 	<script type="text/javascript">
-    var slideshow = remark.create({ 
+    var slideshow = remark.create({
 		highlightLanguage: 'haskell', 
 		highlightStyle: 'magula' // default, googlecode, magula, vs
 	});
