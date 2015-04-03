@@ -1,5 +1,5 @@
 .remark-slide .remark-slide-content {
-	padding: 0.5em 0.5em;
+	padding: 0.5em 0.65em;
 }
 
 .remark-slide-content {
@@ -7,6 +7,7 @@
 }
 
 body {
+  color: #191919;
 }
 
 p {
@@ -27,9 +28,9 @@ code {
   font-size: 19.5px;
 }
 
-pre code, .codeTable {
+pre code {
 	font-size: 0.88em;
-	background-color: #f8f8ff;
+	background-color: #FFFFFF !important;
 }
 
 .bigCode .remark-inline-code {
@@ -42,7 +43,6 @@ a {
 
 .rightFloat, .leftFloat  {
   font-size: 0.8em;
-	margin-top: 10em;
 }
 
 .rightFloat {
@@ -53,6 +53,11 @@ a {
 	float: left;
 }
 
+.caption {
+  position: relative;
+  top: 190px;
+}
+
 .footnote {
 	margin-top: 30px;
 	font-size: 0.5em;
@@ -60,13 +65,14 @@ a {
 
 
 .intro h1 {
-	margin-top: 4em;
 	line-height: 1.2em;
+  font-size: 1.8em !important;
 }
 
 .transition, .transition p {
 	color: rgb(255, 255, 255);
 }
+
 
 .transition {
 	background-color: rgb(76, 102, 164);
@@ -132,8 +138,8 @@ h1 {
 	padding: 5px 10px;
 }
 
-h1 {
-	font-size: 2.5em;
+.remark-slide-content h1 {
+	font-size: 1.3em;
 }
 
 .remark-slide-content h2 {
