@@ -110,7 +110,8 @@ layout: false
 - Fetches the user's Twitter timeline via the Twitter API
 - Filters out the tweets that do not match the regex expression
 - Produces an HTML page with the resulting tweets
-
+- The talk will be in two parts, first the more instructive one, where we'll implement some well known stuff on our own
+- In the second part, where we actually setup our server, we'll be using any available library that fits our purposes
 ---
 class: center, middle, transition
 
@@ -472,6 +473,8 @@ Search <$> Just "Who is Keyser Soze?"
 Timeline :: User -> Integer -> TwitterAPI
 
 pure Timeline :: Maybe (User -> Integer -> TwitterAPI)
+
+pure Timeline <*> Just "Keyser" :: Maybe (Integer -> TwitterAPI)
 
 pure Timeline <*> Just "Keyser" <*> Just 5 -- Just (Timeline "Keyser" 5)
 
@@ -1014,7 +1017,7 @@ class: center, middle, transition
 ## IO Actions
 ```
 hello :: IO ()
-world = putStrLn "World!"
+hello = putStrLn "Hello"
 
 {{content}}
 ```
@@ -1177,6 +1180,8 @@ class: center, middle, transition
 .tweet[![](tweet_lambda.png)]
 
 ???
+- So far we've been reinventing wheels, and implemented everything on our own
+- In this part of the talk we'll be doing some real coding, and will leverage any library that we get our hands on
 - You might suspect, especially if you used Scalaz, that if "real world" stuff is happening in monads, that our code is going to get scary
 - That's actually not the case, Haskell's syntax and type inference makes things like the above non-existant
 - As a reminder, what we want to do is to have a server fetching tweets from the Twitter API and grepping
