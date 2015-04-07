@@ -742,35 +742,15 @@ plus p = concat <$> some p
 - `star` takes a parser and applies it zero or more times using `many`
 - The result is a list of strings, we than map the the concatenation function into the parser, which gives a single long string
 - `plus` is the same thing, but applies the operator one or more times
-- The parser the we implemented so far let us define another useful combinator
---
-has :: Parser String -> Parser String
-has p = star dot *> p <* star dot
-
-???
-- `has` takes a parser and tries to match it anywhere inside of the input string
-- It does that using two new operators, `*>` and `<*`, these are provided by the `Applicative` library
-- They are similar to `<*>`, the sequence two parsers together, but they discard the result on either the left or right
-- In our case, we first use `star dot` to match any number of characters
-- Then we discard the result, and continue matching `p`
-- After that we again match any number of characters and discard them
-- As a result, if `p` matches anywhere inside the input, `has p` matches this string
-- The last thing we need for our parser combinator library is a way to actually run parsers on strings
-- We do this with the match function
+- We do this with the `match` function
 ---
 ## Running a Parser
 ```
 match :: Parser a -> String -> [a]
-match p str = map fst $ parse (p <* eof) str
 ```
 ???
 - Match takes any parser and a string and produces a list of results
-- In the second part we create a new parser which is a combination of `p` and the `eof` parser
-- The `eof` matches the end of the string, you can see its definition in the full source code
-- So `p <* eof` matches `p` only if it reaches the end of the input, and discards the result of `eof`
-- The `parse` unwraps our parsing function, which we then run against the input string
-- The result is a list of pairs, where the first is a possible result, and the second is the remaining input
-- We now map the `fst` function over this list, and discard the remaining inputs part
+- It's a simple function, you can see its implementation in the code repo
 - These are all the combinators we'll need
 - To see that it actually works, we can run a simple example
 --
@@ -872,12 +852,10 @@ match p "Keyser oze"  -- []
 
 ???
 - Now comes the more difficult part, we need to write a parser that takes a regex string and convert it into a `Regex` ADT value
+- Let's do it step by step
 
 ---
 ## Parsing `Regex`
-???
-- Let's do it step by step
---
 
 ```
 regexChar   = Str <$> alphaNum
@@ -906,6 +884,9 @@ regexNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']')
 
 {{content}}
 ???
+- We have a couple of new operators here, which are sequencing operators, both of them are defined in the standard library for `Applicative`s
+- The `*>` runs the first parser, discards its result, and then runs the second parser, and produces its result
+- The `<*` does the opposite, runs the first parser, keeps its result, then runs the second parser and discards its result
 - First we match a bracket and discard it, then we match an alphanumeric string, which is the result of the parser, then we match another bracket and discard it
 - We then wrap the resulting string in a `OneOf` constructor
 - The `NoneOf` case is similar, except that first we match a `[^`
@@ -966,23 +947,16 @@ notRegexOr = andRegexes <$> some (regexString <|> regexDot
 
 ```
 toRegex :: String -> Parser String
-toRegex regexStr = case match regexParser regexStr of
-  []        -> empty
-  regex : _ -> regexToParser regex
   
-
 grep :: String -> String -> Bool
-grep regexStr target = not $ null matches
-  where matches = match (has regex) target
-        regex = toRegex regexStr
 ```
 
 ???
 - We can now combine everything together
+- You can see the actual implementations in the code repo, they are just a few line of code
 - `toRegex` converts a regex string into a parser
-- And `grep` uses `toRegex` on then matches it the result on an input string
-- Note that we are using the `has` combinator to search for the pattern anywhere in the input target string
-- The whole thing succeeds if there is at least one possible match (`null` checks whether ther result is empty)
+- And `grep` uses `toRegex` and `match` to match the regular expression in the target string
+- If the pattern is contained anywhere inside the input
 - Let's run some examples
 --
 Running it:
@@ -1185,6 +1159,7 @@ main = putStrLn "Hello World!"
 ???
 - We actually has some very nice properties here
 - First side effecting code is marked as such by the compiler, if we don't see the `IO` type in the signature then it's pure
+- Since working inside IO is somewhat harder than in regular code, this gives us good incentive to separate pure and impure code, as much as possible
 - Second, because `IO` are just plain values, we can manipulate them as we want, giving us the power of "code as data"
 - But since `IO` can be very imperative, inside an `IO` it's hard to reason about code
 - `IO` is a catch-all for all possible effects, if we want to allow just some side effect (but not launching) missiles, we need some other type
@@ -1231,8 +1206,9 @@ grepTweets pattern = filter $ (grep pattern) . text
 
 ???
 - We have a new operator here, `.`, which is function composition
-- It reads as follows: given a pattern create a function that turn a list of tweets into a new list of tweets
-- We do so with the filter function
+- It reads as follows: given a pattern create a function that turns a list of tweets into a new list of tweets
+- We do so by partially applying the `filter` function
+- On the right is the filter
 - The filter extracts the `text` of the tweet, and then greps it with the pattern
 - Any tweets that don't pass the grep will be filtered out
 - Now we need some way of fetching the tweets
