@@ -451,8 +451,10 @@ Search :: String -> TwitterAPI
 
 pure Search :: Maybe (String -> TwitterAPI)
 
+
 pure Search <*> Just "Who is Keyser Soze?" 
 -- Just (Search "Who is Keyser Soze?")
+
 
 {{content}}
 ```
@@ -474,16 +476,24 @@ Timeline :: User -> Integer -> TwitterAPI
 
 pure Timeline :: Maybe (User -> Integer -> TwitterAPI)
 
+
 pure Timeline <*> Just "Keyser" :: Maybe (Integer -> TwitterAPI)
 
-pure Timeline <*> Just "Keyser" <*> Just 5 -- Just (Timeline "Keyser" 5)
-
-pure Timeline <*> Nothing <*> Just 5 -- Nothing
 
 {{content}}
 ```
 ???
 - In this case lift the `Timeline` function, which takes two arguments
+- So if apply it with one sequential application operator, we still have one operator missing
+- We can then sequentially apply one more time
+--
+pure Timeline <*> Just "Keyser" <*> Just 5 -- Just (Timeline "Keyser" 5)
+
+pure Timeline <*> Nothing <*> Just 5 -- Nothing
+
+
+{{content}}
+???
 - So we use the sequential application operator to two values
 - But if any of the values is missing, the whole thing fails
 - We can again use the `<$>` dollar operator to make this look nicer
@@ -523,19 +533,26 @@ class: center, middle, transition
 ---
 ## The Parsing Function
 ```
-newtype Parser a = Parser { parse :: String -> [(a, String)] }
+String -> [(a, String)]
+
+{{content}}
 ```
 ???
 - A parser is a function that takes a string (or rather, a stream of characters), which is the current state of parsing, and produces a list of pairs
-- `newtype` is like `data` but wraps a single value
-- You can think of it as a type tag, which the compiler optimizes away at compile time
-- We name the wrapped value `parse`, this generates the function `parse` that unwraps the value when we need it (though we also have pattern matching)
 - Each pair designates a possible parsing of the string
 - The first item in the pair, of type `a`, is the result of parsing
 - The second item is the remaining characters, that is, the new state of the parser
-- To actually run the parser, we apply the function to a string and see the results
 - If the list of results is empty, then there is no way to parse the string
+- To actually run the parser, we apply the function to a string and see the results
+--
+newtype Parser a = Parser { parse :: String -> [(a, String)] }
 
+???
+- We'll wrap the function in a new type
+- `newtype` is like `data` but wraps a single value
+- You can think of it as a type tag, which the compiler optimizes away at compile time
+- It's a bit of boilerplate that allows to define new typeclasses for our function
+- We name the wrapped value `parse`, this generates a getter function called `parse` that unwraps the value when we need it (though we also have pattern matching)
 --
 Advancing the stream:
 ```
@@ -843,6 +860,7 @@ regexToParser regex = case regex of
 --
 Running it:
 ```
+-- [Kk]eyser.+[Ss]oze
 regex = And (OneOf "Kk") (And (Str "eyser") (And (Plus Dot)
   (And (OneOf "Ss") (Str "oze"))))
 
