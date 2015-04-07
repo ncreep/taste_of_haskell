@@ -817,21 +817,40 @@ And (OneOf "Kk") (And (Str "eyser") (And (Plus Dot)
   (And (OneOf "Ss") (Str "oze"))))
 ```
 ???
-- Now that we have this specification, we can write an evaluator
+- With this specification, let's see what we actually need
+---
+## What We need
+
+```
+strToRegex :: String -> Maybe Regex
+
+evalRegex :: Regex -> Parser String
+
+grep :: String -> String -> Bool
+```
+
+???
+- We'll need to implement 3 functions
+- `strToRegex` takes a string and tries to parse an instance of a `Regex` data type from it
+- We'll do this by creating a `Parser` that recognizes regular expressions and converts them into `Regex` instances
+- `evalRegex` will evaluate the `Regex` instance, into a `Parser` that matches the regular expression represented by this instance
+- The `grep` function will join these two functions into a single process, so it takes a string with a regular expression, and tests whether a target string contains this expression
+- The simplest part is the evaluator
 - With what we already implemented it almost writes itself
 ---
+
 ## The Evaluator
 ```
-regexToParser :: Regex -> Parser String
-regexToParser regex = case regex of
+evalRegex :: Regex -> Parser String
+evalRegex regex = case regex of
   Str s     -> string s
   Dot       -> dot
   OneOf cs  -> oneOf cs
   NoneOf cs -> noneOf cs
-  Star r    -> star $ regexToParser r
-  Plus r    -> plus $ regexToParser r
-  Or r1 r2  -> regexToParser r1 <|> regexToParser r2
-  And r1 r2 -> regexToParser r1 & regexToParser r2
+  Star r    -> star $ evalRegex r
+  Plus r    -> plus $ evalRegex r
+  Or r1 r2  -> evalRegex r1 <|> evalRegex r2
+  And r1 r2 -> evalRegex r1 & evalRegex r2
 ```
 ???
 - So no surprises here, each case does the obvious thing
@@ -844,7 +863,7 @@ Running it:
 regex = And (OneOf "Kk") (And (Str "eyser") (And (Plus Dot)
   (And (OneOf "Ss") (Str "oze"))))
 
-p = regexToParser regex
+p = evalRegex regex
 
 match p "Keyser Soze" -- ["Keyser Soze"]
 match p "Keyser oze"  -- []
@@ -858,6 +877,7 @@ match p "Keyser oze"  -- []
 ## Parsing `Regex`
 
 ```
+regexChar :: Parser Regex
 regexChar   = Str <$> alphaNum
 
 {{content}}
@@ -946,18 +966,35 @@ notRegexOr = andRegexes <$> some (regexString <|> regexDot
 ## Combining All Together
 
 ```
-toRegex :: String -> Parser String
+regexParser :: Parser Regex
+
+strToRegex :: String -> Maybe Regex
+strToRegex str = safeHead $ match regexParser str
+
+strToRegex "[Kk]eyser.+[Ss]oze" 
+-- Just (And (OneOf "Kk") (And (Str "eyser") 
+--        (And (Plus Dot) (And (OneOf "Ss") (Str "oze")))))
   
-grep :: String -> String -> Bool
+{{content}}
 ```
 
 ???
 - We can now combine everything together
-- You can see the actual implementations in the code repo, they are just a few line of code
-- `toRegex` converts a regex string into a parser
-- And `grep` uses `toRegex` and `match` to match the regular expression in the target string
-- If the pattern is contained anywhere inside the input
+- In `strToRegex` we use our `regexParser` to parse a regex string
+- This yields a list of results, we then take the head of the results with `safeHead`, if there aren't any result, we return `Nothing`
+- We can run in on the example string from before, and the result is what we'd expect
+--
+evalRegex :: Regex -> Parser String
+match :: Parser String -> String -> [String]
+
+grep :: String -> String -> Bool
+???
+- We can now easily combine our the functions from above to create the `grep` function
+- `grep` uses `strToRegex`, `evalRegex` and `match` to compile and match the regular expression in the target string
+- You can see the actual implementation in the code repo, they are just a few line of code
+- If the pattern is contained anywhere inside the input, `grep` returns true
 - Let's run some examples
+
 --
 Running it:
 

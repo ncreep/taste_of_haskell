@@ -1,6 +1,7 @@
 module Regex where
 
 import Control.Applicative
+import Data.Maybe
 
 import Parser
 
@@ -22,16 +23,16 @@ data Regex =
   deriving (Eq, Show)
  
 -- Converts a `Regex` value into a corresponding `Parser`
-regexToParser :: Regex -> Parser String
-regexToParser regex = case regex of
+evalRegex :: Regex -> Parser String
+evalRegex regex = case regex of
   Str s     -> string s
   Dot       -> dot
   OneOf cs  -> oneOf cs
   NoneOf cs -> noneOf cs
-  Star r    -> star $ regexToParser r
-  Plus r    -> plus $ regexToParser r
-  Or r1 r2  -> regexToParser r1 <|> regexToParser r2
-  And r1 r2 -> regexToParser r1 & regexToParser r2
+  Star r    -> star $ evalRegex r
+  Plus r    -> plus $ evalRegex r
+  Or r1 r2  -> evalRegex r1 <|> evalRegex r2
+  And r1 r2 -> evalRegex r1 & evalRegex r2
 
 -- Using `And`s to join a list of `Regex`s into a single `Regex`
 andRegexes :: [Regex] -> Regex
@@ -58,14 +59,15 @@ notRegexOr = andRegexes <$> some (regexString <|> regexDot <|> regexOneOf <|> re
 -- The full parser for `Regex` expressions
 regexParser = regexOr <|> notRegexOr
 
--- Converts a regex-like string into a `Parser`
-toRegex :: String -> Parser String
-toRegex regexStr = case match regexParser regexStr of
-  []        -> empty
-  regex : _ -> regexToParser regex -- taking the first result
+safeHead = listToMaybe
+
+-- Converts a string into a `Regex` datatype
+strToRegex :: String -> Maybe Regex
+strToRegex str = safeHead $ match regexParser str -- taking the first result
 
 -- Takes a regex-like string and a target string and return `True` if there is a match anywhere inside the string
 grep :: String -> String -> Bool
 grep regexStr target = not $ null matches
   where matches = match (has regex) target
-        regex = toRegex regexStr
+        maybeRegex = fmap evalRegex $ strToRegex regexStr
+        regex = fromMaybe empty maybeRegex

@@ -1,3 +1,7 @@
+.remark-slide-number { 
+	display: none;
+}
+
 .remark-slide .remark-slide-content {
 	padding: 0.5em 0.65em;
 }
@@ -81,10 +85,6 @@ a {
 .transition {
 	background-color: rgb(76, 102, 164);
 	line-height: 1.7em;
-}
-
-.remark-slide-number { 
-	display: none;
 }
 
 .transition a {
