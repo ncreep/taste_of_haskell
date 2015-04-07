@@ -170,8 +170,8 @@ map f ls = case ls of
 - We can define the familiar `map` function
 - Haskell has built-in syntax for lists, and we can do pattern matching on using a `case` expression
 --
-map' f []    = []
-map' f (h:t) = f h : map' f t
+map f []    = []
+map f (h:t) = f h : map f t
 
 ???
 - Another way of doing pattern matching, is by splitting the function definitions into the relevant cases
@@ -235,7 +235,7 @@ mapPlusTwo = map (\x -> x + 2)
 - There a nicer way to write the same thing
 --
 
-mapPlusTwo' = map (+ 2)
+mapPlusTwo = map (+ 2)
 
 {{content}}
 ???
@@ -1171,15 +1171,15 @@ main :: IO ()
 main = putStrLn "Hello World!"
 ```
 
-- The runtime executes the `main` action
-
-- But the code is referentially transparent
-
-- `>>=` takes care of sequencing in a lazy environment
-
 ???
 - This is the code from one of the first slides
 - If we run this program, it actually prints to standard output
+
+--
+- The runtime executes the `main` action
+
+- `>>=` takes care of sequencing in a lazy environment
+???
 - What happens is that when the Haskell runtime sees definition called `main` with type `IO ()`, it takes the  action and actually executes it
 - So everything we done in the code is pure, the runtime is the one that actually does side effects
 - And that's all we need to build programs that actually do stuff
@@ -1188,7 +1188,7 @@ main = putStrLn "Hello World!"
 
 - An effects system
 
-- `IO` values = code as data
+- `IO` values `=` code as data
 
 - Hard to reason inside `IO`
 
