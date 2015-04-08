@@ -875,7 +875,7 @@ match p "Keyser oze"  -- []
 
 ---
 ## Parsing `Regex`
-
+.codeFloatRight[`[Kk]eyser.+[Ss]oze|[^abc].*ton`]
 ```
 regexChar :: Parser Regex
 regexChar   = Str <$> alphaNum
