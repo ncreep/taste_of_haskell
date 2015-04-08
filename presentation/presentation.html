@@ -666,6 +666,9 @@ instance Applicative Parser where
 (++) :: String -> String -> String
 
 
+char 'a' & char 'b'
+
+
 {{content}}
 ```
 
@@ -721,8 +724,8 @@ instance Alternative Parser where
 - This provides backtracking in case we have many possible parsings
 - We don't need to implement `some` and `many` since they have default implementation in terms of the alternation operator
 - With this in hand we can combine parsers in a new way, for example
----
-## Using the New Combinators
+--
+Using the new combinators:
 ```
 string "Keyser" <|> string "Soze"
 
@@ -1118,7 +1121,7 @@ getNameAndGreet = getName >>= \name ->
 - But as we know from Scala, once you start using monads we get a whole lot of `bind` applications
 - Just like in Scala, Haskell special syntactic sugar monads, it's called `do` notation
 --
-getNameAndGreet' = do
+getNameAndGreet = do
   name <- getName
   putStrLn $ "Hello " ++ name
 
