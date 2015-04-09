@@ -204,9 +204,9 @@ map f ls = case ls of
   []  -> []
   h:t -> f h : map f t
  
-map' :: (a -> b) -> [a] -> [b] 
-map' f []    = []
-map' f (h:t) = f h : map' f t
+map :: (a -> b) -> [a] -> [b] 
+map f []    = []
+map f (h:t) = f h : map f t
 ```
 
 ???
