@@ -34,12 +34,6 @@ evalRegex regex = case regex of
   Or r1 r2  -> evalRegex r1 <|> evalRegex r2
   And r1 r2 -> evalRegex r1 & evalRegex r2
 
--- Using `And`s to join a list of `Regex`s into a single `Regex`
-andRegexes :: [Regex] -> Regex
-andRegexes []       = Str ""
-andRegexes [r]      = r
-andRegexes (r : rs) = And r $ andRegexes rs
-
 -- Parsers for the various cases of `Regex`
 regexChar   = Str <$> alphaNum
 regexString = Str <$> plus alphaNum
@@ -48,16 +42,18 @@ regexOneOf  = OneOf <$> (char '[' *> plus alphaNum <* char ']') -- syntax: [abc]
 regexNoneOf = NoneOf <$> (string "[^" *> plus alphaNum <* char ']') -- syntax: [^abc]
 regexStar   = Star <$> singleCharRegex <* char '*' -- syntax: a*
 regexPlus   = Plus <$> singleCharRegex <* char '+' -- syntax: a+
-regexOr     = Or <$> notRegexOr <* char '|' <*> regexParser -- syntax: abc*|[abc]a|.*
+regexAnd    = And <$> simpleRegex <*> (simpleRegex <|> regexAnd) -- syntax: [a]b
+regexOr     = Or <$> (simpleRegex <|> regexAnd) <* char '|' <*> regexParser -- syntax: a|b
 -- since `Or` should have low precedence, first trying to match as many non-`Or` values as possible
+-- since `And` should have high precedence, we are not letting it capture `Or` values
 
 -- Parser that match single characters
-singleCharRegex = regexDot <|> regexChar <|> regexOneOf <|> regexNoneOf
--- A single parser for everything that is not an `Or` parser, parsing as many occurrences as possible 
-notRegexOr = andRegexes <$> some (regexString <|> regexDot <|> regexOneOf <|> regexNoneOf <|> regexStar <|> regexPlus)
+singleCharRegex = regexChar <|> regexDot <|> regexOneOf <|> regexNoneOf
+-- A parser for all the simple regex parsers, i.e. excluding `And` and `Or`
+simpleRegex = regexString <|> regexDot <|> regexOneOf <|> regexNoneOf <|> regexStar <|> regexPlus
 
 -- The full parser for `Regex` expressions
-regexParser = regexOr <|> notRegexOr
+regexParser = simpleRegex <|> regexAnd <|> regexOr
 
 safeHead = listToMaybe
 

@@ -880,17 +880,11 @@ match p "Keyser oze"  -- []
 ## Parsing `Regex`
 .codeFloatRight[`[Kk]eyser.+[Ss]oze|[^abc].*ton`]
 ```
-regexChar :: Parser Regex
-regexChar   = Str <$> alphaNum
-
-{{content}}
-```
-???
-- This matches exactly one alphanumeric and wraps it in a `Str` constructor
---
+regexString :: Parser Regex
 regexString = Str <$> plus alphaNum
 
 {{content}}
+```
 ???
 - This matches at least one alphanumeric and wraps the resulting string `Str` constructor
 --
@@ -924,24 +918,37 @@ regexPlus   = Plus <$> singleCharRegex <* char '+'
 - So in this case we match a single character, then match either a `*` or a `+` and discard it
 - We then wrap the single chararcter pattern in a `Star` or `Plus` constructor
 --
-regexOr     = Or <$> notRegexOr <* char '|' <*> regexParser 
+regexAnd    = And <$> simpleRegex <*> (simpleRegex <|> regexAnd)
+
+{{content}}
+
+???
+- This case is a bit tricky since we need to handle the precedence between `And` and `Or`
+- The details don't really matter, but the result is the following:
+- `simpleRegex` aggregates all the parsers so far, we'll see its definition in a moment
+- First we match any simple expression we can, then we go on matching another one or possibly another `And` case
+- This provides the two arguments that we need for `And`, which we indeed apply on the right
+--
+regexOr     = Or <$> simpleRegexAnd <* char '|' <*> regexParser
 
 {{content}}
 ???
-- The `Or` case is the most complicated, we need to write the parser in such a way that or operator has the lowest precedence
-- The details don't really matter, but the result is the following:
-- First we match as many expressions that are not `Or`, this is the `notRegexOr` that we'll define in a moment
+- The `Or` case is similar to `And`, except that it has lower precedence
+- Again, the details don't really matter
+- First we match as many expressions that are not `Or`
+- `simpleRegexAnd` is the same as the parenthesized expression in the `And` case
 - Then we match and discard a single pipe
 - And then we recursively match the whole regex parser, which we'll define now
 --
-regexParser = regexOr <|> notRegexOr
+regexParser = simpleRegex <|> regexAnd <|> regexOr
 
 
 {{content}}
 ???
-- So the full regex parser is either an `Or` case, or as many non-`Or` cases as possible
+- So the full regex parser is either a simple expression, an `And`, or an `Or` case
 - If you're still following, you might notice the strange recursion pattern here
-- `regexOr` references `regexParser` which in turn references `regexOr`
+- `regexAnd` is defined in terms of itself
+- And `regexOr` references `regexParser` which in turn references `regexOr`
 - This should've led to infinite recursion, but it doesn't
 - The reason is, that I didn't mention it this far, but by default, all definitions in Haskell are lazy
 - So neither of these expressions is actually evaluated until we call it
@@ -949,21 +956,16 @@ regexParser = regexOr <|> notRegexOr
 - But in order to do that, we need to explicitly ask for it, Haskell does it by default
 - Here are the two missing definitions
 --
-singleCharRegex = regexDot <|> regexChar <|> regexOneOf <|> regexNoneOf
-                              
-{{content}}
-???
-- This just matches any of the patterns from before that match a single character
---
-notRegexOr = andRegexes <$> some (regexString <|> regexDot 
-                              <|> regexOneOf <|> regexNoneOf 
-                              <|> regexStar <|> regexPlus)
+simpleRegex = regexString <|> regexDot <|> regexOneOf <|> 
+              regexNoneOf <|> regexStar <|> regexPlus
+              
+singleCharRegex = regexChar <|> regexDot <|> regexOneOf <|> regexNoneOf
+
+simpleRegexAnd = simpleRegex <|> regexAnd
 
 ???
-- This matches any of the non-`Or` patterns from befor, at least once or more
-- The `some` function produces a list of `Regex` values, we then apply the `andRegexes` function to join all together
-- `andRegexes` is a simple fold like function, that inserts the `And` constructor between all of the patterns
-- I'll skip it's definition for now
+- This just matches any of the patterns from before that match a single character
+- This matches any of the simple parsers from above
 ---
 
 ## Combining All Together
