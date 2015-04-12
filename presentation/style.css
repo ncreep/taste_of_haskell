@@ -76,6 +76,10 @@ a {
 	font-size: 0.5em;
 }
 
+.gap {
+  display: block;
+  margin-top: 40px;
+}
 
 .intro h1 {
 	line-height: 1.2em;
