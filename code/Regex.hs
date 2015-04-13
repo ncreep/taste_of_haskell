@@ -33,6 +33,24 @@ evalRegex regex = case regex of
   Plus r    -> plus $ evalRegex r
   Or r1 r2  -> evalRegex r1 <|> evalRegex r2
   And r1 r2 -> evalRegex r1 & evalRegex r2
+ 
+orRegexs r [] = r
+orRegexs r1 (r2:rs) = Or r1 $ orRegexs r2 rs
+
+andRegexs r [] = r
+andRegexs r1 (r2:rs) = And r1 $ andRegexs r2 rs
+
+a = orRegexs <$> b <*> many (char '|' *> b)
+b = andRegexs <$> c <*> many c
+c = regexChar <|> (Star <$> regexChar <* char '*')
+c = regexChar <|> (Star <$> regexChar <* char '*')
+
+
+{-
+a = b & star (char '|' *> b)
+b = c & star (c)
+c = alphaNum <|> (alphaNum <* char '*')
+-}
 
 -- Parsers for the various cases of `Regex`
 regexChar   = Str <$> alphaNum
@@ -46,7 +64,6 @@ regexAnd    = And <$> simpleRegex <*> (simpleRegex <|> regexAnd) -- syntax: [a]b
 regexOr     = Or <$> (simpleRegex <|> regexAnd) <* char '|' <*> regexParser -- syntax: a|b
 -- since `Or` should have low precedence, first trying to match as many non-`Or` values as possible
 -- since `And` should have high precedence, we are not letting it capture `Or` values
-
 -- Parser that match single characters
 singleCharRegex = regexChar <|> regexDot <|> regexOneOf <|> regexNoneOf
 -- A parser for all the simple regex parsers, i.e. excluding `And` and `Or`
