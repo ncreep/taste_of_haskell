@@ -156,7 +156,7 @@ addLists ls1 ls2 = ls1 ++ ls2
 - Next there are functions
 - Note that function arguments do not require parentheses
 --
-addLists [1, 2, 3] [4, 5] -- [1,2,3,4,5]
+addLists [1, 2, 3] [4, 5] -- [1, 2, 3, 4, 5]
 
 
 {{content}}
@@ -200,8 +200,7 @@ name = "Keyser Soze"
 addLists :: [a] -> [a] -> [a]
 addLists ls1 ls2 = ls1 ++ ls2
 
-longList :: [Integer]
-longList = addLists [1, 2, 3] [4, 5] -- [1, 2, 3, 4, 5]
+addLists [1, 2, 3] [4, 5] -- [1, 2, 3, 4, 5]
 
 map :: (a -> b) -> [a] -> [b]
 map f ls = case ls of
@@ -222,7 +221,7 @@ map f (h:t) = f h : map f t
 - This actually works very nicely with function application syntax
 - Let's see an example
 ---
-## Currying
+## Partial Application
 ```
 map :: (a -> b) -> [a] -> [b]
 
@@ -749,7 +748,6 @@ plus p = concat <$> some p
 - `star` takes a parser and applies it zero or more times using `many`
 - The result is a list of strings, we than map the the concatenation function into the parser, which gives a single long string
 - `plus` is the same thing, but applies the operator one or more times
-- We do this with the `match` function
 ---
 ## Running a Parser
 ```
@@ -778,7 +776,7 @@ match p "KeyserSoze"  -- []
 - They are equivalent to this regular expression
 - As you can see, we wrote a small domain specific language for parsers
 - And they work as expected
-- With this, we have the foundation to implement our little regular expressions engines
+- With this, we have the foundation to implement our little regular expressions engine
 ---
 class: center, middle, transition
 
@@ -1114,6 +1112,9 @@ class Applicative m => Monad m where
 - The `>>=` symbol is called `bind` and it's like Scala's `flatMap`
 - `IO` has a monad instance, so we can use these functions to do some more complicated chaining
 --
+
+(>>=) :: IO String -> (String -> IO ()) -> IO ()
+
 getNameAndGreet :: IO ()
 getNameAndGreet = getName >>= \name -> 
   putStrLn $ "Hello " ++ name
