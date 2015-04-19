@@ -13,6 +13,10 @@ class: center, middle, transition, intro
 #  A Taste of Haskell for <br /> Scala Programmers
 
 .caption[Daniel Beskin]
+???
+- This talk will be about the language Haskell
+- I'm a bit ambitious with what I want to show you today, so be prepared to be fire-hosed with lots of code
+- Hopefully, this will give you a taste of what it feels like to program in Haskell 
 ---
 
 class: center, middle, transition
@@ -20,8 +24,7 @@ class: center, middle, transition
 .xkcd[![](xkcd.png)]
 
 ???
-- This talk will be about the language Haskell
-- Here's the obligatory XKCD comic
+- Here's the mandatory XKCD comic
 - It's a common misconception that Haskell is this ivory tower language, that has no practical use
 - So to sort this point out
 
@@ -105,17 +108,18 @@ layout: false
 ???
 
 - This is going to be an example driven tutorial
-- We'll try to build a "real world" application, with all sorts of side effects and things
-- So no Fibonacci
 - The aim is not to be a comprehensive introduction to Haskell, but rather to convey the feeling of programming in Haskell
-- Accepts GET requests with a Twitter user name and a regex-like expression
+- The talk will be in two parts, first the more instructive one, where we'll implement some well known stuff on our own
+- Specifically, we'll write our own toy regex engine, this will be most of the talk
+- This will give us an opportunity to do some non-trivial Haskell code
+- Then we'll try to build a "real world" application, with all sorts of side effects and things
+- The application: accepts GET requests with a Twitter user name and a regex-like expression
 - Fetches the user's Twitter timeline via the Twitter API
 - Filters out the tweets that do not match the regex expression
 - Produces an HTML page with the resulting tweets
-- The talk will be in two parts, first the more instructive one, where we'll implement some well known stuff on our own
-- Specifically, we'll write our own toy regex engine, this will be most of the talk
 - In the second part, where we actually setup our server, we'll be using any available library that fits our purposes
 - Despite the stereotypes, this is rather simple, so it won't take us much to implement
+- So no Fibonacci
 ---
 class: center, middle, transition
 
@@ -180,7 +184,6 @@ map f (h:t) = f h : map f t
 ???
 - Another way of doing pattern matching, is by splitting the function definitions into the relevant cases
 - Both ways are equivalent
-- Apostrophe is a valid character in a Haskell identifier
 - So far, we didn't mention any types anywhere
 - This is possible, since unlike Scala, Haskell has *global* type inference
 - So it is almost always possible (but not always recommended) to omit type signatures and the compiler just infers it
@@ -432,7 +435,7 @@ class Functor f => Applicative f where
 ???
 - It actually has more methods, but they have default implementations
 - We see that `Applicative` has a typeclass constraint of its own, `Functor`
-- Which means that every `Applicative` is also a `Functor`, that is, `Applicative` generalizes `Functor`
+- Which means that every `Applicative` is also a `Functor`, that is, `Functor` generalizes `Applicative`
 - If we think of `f` as some sort of a container with an effect, than `pure` takes a plain value a puts in the container
 - The `<*>` is called "sequential application" the signature tells us what it does
 - If we have a function inside the "container", we can use sequential application to apply the function to another value inside another container
@@ -492,7 +495,7 @@ pure Timeline <*> Just "Keyser" :: Maybe (Integer -> TwitterAPI)
 ```
 ???
 - In this case lift the `Timeline` function, which takes two arguments
-- So if apply it with one sequential application operator, we still have one operator missing
+- So if apply it with one sequential application operator, we still have one argument missing
 - We can then sequentially apply one more time
 --
 pure Timeline <*> Just "Keyser" <*> Just 5 -- Just (Timeline "Keyser" 5)
@@ -518,7 +521,7 @@ f <$> x1 <*> x2 <*> ... <*> xn
 ```
 ???
 - If you're familiar with Scalaz's `Validation`, this should look familiar
-- With all this in hand we are ready to start implementing our application
+- With all this in hand we are ready to start implementing our toy regex engine
 - Any questions so far?
 
 ---
@@ -530,11 +533,9 @@ class: center, middle, transition
 
 ???
 
-- As we described before, the program is going to accept regex-like string
-- We could some library to do the matching with the regex
-- But we won't be doing this, instead, it'll be more instructive to implement our own (simplified) regex engine
+- As I said before, we'll be implementing a (simplified) regex engine
 - To do this, we'll use parser combinators, which you may be familiar with from Scala
-- Again, Haskell has some very good parser combinators libraries
+- Of course, Haskell has some very good parser combinators libraries
 - But instead of using them, we'll quickly implement one on our own
 - For what we need, it's actually not that much of an effort
 
@@ -645,8 +646,8 @@ instance Functor Parser where
 ```
 ???
 - There's a bit of new syntax here, it's called "list comprehensions". It's like Scala's for comprehensions but specialized to lists
-- What's to the left of the vertical bar is the result of the whole thing, to the right we deconstruct the list
-- So, given a mapping function (`f`) and a parsing function (`p`), we create a new parser function. 
+- What's to the left of the vertical bar is the result of the whole thing, to the right are the generators
+- So, given a mapping function (`f`) and a parser, we first deconstruct the parser and extract the parsing function (`p`), we then create a new parser function
 - In this function, we run the original function on the incoming string
 - Then we run over the results and apply `f` in the appropriate place
 - Next we have the `Applicative` instance
@@ -681,7 +682,7 @@ char 'a' & char 'b'
 ```
 
 ???
-- Here we are defining an operator that takes two parser and runs them one after the other and concatenates the results
+- Here we are defining an operator that takes two parsers and runs them one after the other and concatenates the results
 - Notice the applicative syntax
 - In here the `++` operator is used as a two arguments function, we `fmap` and sequential application to apply this operator inside the parsers
 - Using `&` we can define the `string` function that matches a whole string
@@ -716,7 +717,7 @@ class Applicative f => Alternative f where
 - The definition of the class is approximately this
 - Given that `f` has an instance of `Applicative`, we define the `Alternative` instance
 - In the context of parsing, `empty` is a failed parse, i.e. the empty list
-- The `<|>` operator, is the alternation operator, it takes two parser and runs them in parallel
+- The `<|>` operator, is the alternation operator, it takes two parsers and runs them in parallel
 - `many` and `some` run a single parser as many times as possible and aggregate the results into a list
 - `many` runs the parser zero or more times, while `some` runs it at least once
 - Let's see the implementation
@@ -759,10 +760,10 @@ plus p = concat <$> some p
 match :: Parser a -> String -> [a]
 ```
 ???
-- Match takes any parser and a string and produces a list of results
+- `match` takes any parser and a string and produces a list of results
 - It's a simple function, you can see its implementation in the code repo
 - These are all the combinators we'll need
-- To see that it actually works, we can run a simple example
+- To see that it actually works, we can run an example
 --
 A bigger example:
 
@@ -782,6 +783,8 @@ match p "KeyserSoze"  -- []
 - As you can see, we wrote a small domain specific language for parsers
 - And they work as expected
 - With this, we have the foundation to implement our little regular expressions engine
+- Also, if you're considering using regular expressions for something complicated, consider using parser combinators
+- They are reusable, and you can write and test parts of an expression in isolation, and then compose the results
 ---
 class: center, middle, transition
 
@@ -942,7 +945,6 @@ regexOr     = Or <$> simpleRegexAnd <* char '|' <*> regexParser
 ???
 - The `Or` case is similar to `And`, except that it has lower precedence
 - Again, the details don't really matter
-- First we match as many expressions that are not `Or`
 - `simpleRegexAnd` is the same as the parenthesized expression in the `And` case
 - Then we match and discard a single pipe
 - And then we recursively match the whole regex parser, which we'll define now
@@ -961,7 +963,7 @@ regexParser = simpleRegex <|> regexAnd <|> regexOr
 - So neither of these expressions is actually evaluated until we call it
 - We could've achieved something similar with Scala's lazy variable or by-name parameters
 - But in order to do that, we need to explicitly ask for it, Haskell does it by default
-- Here are the two missing definitions
+- Here are the missing definitions
 --
 simpleRegex = regexString <|> regexDot <|> regexOneOf <|> 
               regexNoneOf <|> regexStar <|> regexPlus
@@ -1023,6 +1025,8 @@ grep "[Kk]eyser.+[Ss]oze|[^abc].*ton" "But so is Kobayashi" -- False
 - But I hope that this gave a taste of what it looks like in Haskell
 - I think that most important thing to take away from this is how much you can gain by tapping into the standard typeclasses
 - By defining only a few typeclass functions, out of the box, we got a bunch of generic combinators that just work
+- I find it quite amazing that in about 100 lines of code, we've managed to implement a small, but non-trivial language
+- Any questions so far?
 - Let's move on
 ---
 
@@ -1033,9 +1037,9 @@ class: center, middle, transition
 .tweet[![](tweet_imperative.png)]
 
 ???
-- The quote here, although is not completely serious, does have some truth in it
 - So far, everything we've done is pure
 - But I've promised you "real world" stuff, and that comes with side effects
+- As we'll see, Haskell is good at doing side effects, which is the reason for this quote
 - So let's do that
 ---
 ## Side Effects In Haskell
@@ -1095,9 +1099,9 @@ getName = getLine
 addGreeting :: IO String
 addGreeting = fmap ("Hello " ++) getName
 ???
-- `fmap` get access to the string inside the action and can apply a function to it, yielding a new action
+- `fmap` gets access to the string inside the action and can apply a function to it, yielding a new action
 - But what if we want something more complicated, like reading a string and then using it to print a response?
-- `Functor` and `Applicative` don't have any function that does that
+- `Functor` and `Applicative` don't have any functions that can do that
 - Enter the dreaded `Monad`
 ---
 ## The `Monad` Class
@@ -1196,7 +1200,7 @@ main = putStrLn "Hello World!"
 - `>>=` takes care of sequencing in a lazy environment
 ???
 - What happens is that when the Haskell runtime sees definition called `main` with type `IO ()`, it takes the  action and actually executes it
-- So everything we done in the code is pure, the runtime is the one that actually does side effects
+- Because we are using `bind`, effects are sequenced in the right order
 - And that's all we need to build programs that actually do stuff
 ---
 ## Living in `IO`
@@ -1209,12 +1213,13 @@ main = putStrLn "Hello World!"
 
 - No effect granularity
 ???
+- To recap
 - We actually has some very nice properties here
-- First side effecting code is marked as such by the compiler, if we don't see the `IO` type in the signature then it's pure
+- First, side effecting code is marked as such by the compiler, if we don't see the `IO` type in the signature then it's pure
 - Since working inside IO is somewhat harder than in regular code, this gives us good incentive to separate pure and impure code, as much as possible
 - Second, because `IO` are just plain values, we can manipulate them as we want, giving us the power of "code as data"
 - But since `IO` can be very imperative, inside an `IO` it's hard to reason about code
-- `IO` is a catch-all for all possible effects, if we want to allow just some side effect (but not launching) missiles, we need some other type
+- `IO` is a catch-all for all possible effects, if we want to allow just some side effect (but not launching missiles), we need some other type
 - Anyways, we are now ready to write our server application
 ---
 
@@ -1246,11 +1251,11 @@ instance FromJSON Tweet
 
 ???
 - We have some new syntax here, it's called record syntax
-- We given names to the field, and it automatically generates getter functions with these names
+- We give names to the fields, and it automatically generates getter functions with these names
 - Since we are going to get tweets from the Twitter API, we'll need some JSON support here
 - We'll use a JSON library called `aeson`
-- That's why we have the two instances here, they magically create JSON serializers and deserializers for us
-- All that's needed is to add the `deriving Generic` clause here, the compiler takes care of the rest
+- That's why we have the typeclass instance here, it's magically create JSON deserializers for us
+- All that's needed is to add the `deriving Generic` clause here, the compiler and the library takes care of the rest
 - The core functionality of the application is grepping, and we need one function for this
 --
 grepTweets :: String -> [Tweet] -> [Tweet]          
@@ -1283,7 +1288,7 @@ timeline config user = do
 - Let's see how it works
 - Since we want to call the outside world, we have to create an IO action
 - It reads like imperative code:
-- Create an http request for the feed of the user (`limit` just limits the nubmer of tweets
+- Create an http request for the feed of the user
 - Sign the request with the credentials that we get from a configuration object
 - Make the actual request
 - Extract the request body
