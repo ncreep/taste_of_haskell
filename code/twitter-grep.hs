@@ -15,7 +15,7 @@ import Control.Monad.Trans (liftIO)
 import Control.Monad (forM_)
 
 import Web.Scotty hiding (text)
-import Text.Blaze.Html5 hiding (text, map)
+import Text.Blaze.Html5 hiding (text, map, param)
 import Text.Blaze.Html5.Attributes
 import qualified Web.Scotty as S
 import qualified Text.Blaze.Html5 as H
@@ -125,8 +125,8 @@ main = do
   scotty 3000 $ do
     -- The main path for the application, applying grep to a user's timeline
     get "/grep-tweets/:user" $ do
-      user        <- S.param "user"
-      pattern     <- S.param "pattern"
+      user        <- param "user"
+      pattern     <- param "pattern"
       maybeTweets <- liftIO $ timeline config user
 
       let response = case maybeTweets of

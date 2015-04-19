@@ -1315,8 +1315,8 @@ main = do
   config <- readConf
   scotty 3000 $ do
     get "/grep-tweets/:user" $ do
-      user        <- S.param "user"
-      pattern     <- S.param "pattern"
+      user        <- param "user"
+      pattern     <- param "pattern"
       maybeTweets <- liftIO $ timeline config user
       
       let response = case maybeTweets of
