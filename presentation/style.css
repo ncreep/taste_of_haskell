@@ -1,4 +1,4 @@
-.remark-slide-number { 
+.remark-slide-number {
 	display: none;
 }
 
@@ -7,11 +7,11 @@
 }
 
 .remark-slide-content {
-  font-size: 1.8em;
+	font-size: 1.8em;
 }
 
 body {
-  color: #191919;
+	color: #191919;
 }
 
 p {
@@ -22,14 +22,14 @@ code {
 	-moz-border-radius: 5px;
 	-web-border-radius: 5px;
 	border-radius: 5px;
-  font-weight: bold;
-  font-size: 1.0em;
-  font-family: 'Courier New', monospace;
+	font-weight: bold;
+	font-size: 1.0em;
+	font-family: 'Courier New', monospace;
 }
 
 .remark-code {
-  font-weight: 900;
-  font-size: 19.5px;
+	font-weight: 900;
+	font-size: 19.5px;
 }
 
 pre code {
@@ -38,24 +38,24 @@ pre code {
 }
 
 .bigCode .remark-inline-code {
-  font-size: 1.5em;
+	font-size: 1.5em;
 }
 
 .hljs-magula .hljs-comment {
-  color: #676767;
+	color: #676767;
 }
 
 a {
 	text-decoration: none;
 }
 
-.rightFloat, .leftFloat  {
-  font-size: 0.8em;
+.rightFloat,.leftFloat {
+	font-size: 0.8em;
 }
 
 .codeFloatRight {
-  float: right;
-  font-size: 0.8em;
+	float: right;
+	font-size: 0.8em;
 }
 
 .rightFloat {
@@ -67,8 +67,8 @@ a {
 }
 
 .caption {
-  position: relative;
-  top: 190px;
+	position: relative;
+	top: 190px;
 }
 
 .footnote {
@@ -77,19 +77,18 @@ a {
 }
 
 .gap {
-  display: block;
-  margin-top: 40px;
+	display: block;
+	margin-top: 40px;
 }
 
 .intro h1 {
 	line-height: 1.2em;
-  font-size: 1.8em !important;
+	font-size: 1.8em !important;
 }
 
-.transition, .transition p {
+.transition,.transition p {
 	color: rgb(255, 255, 255);
 }
-
 
 .transition {
 	background-color: rgb(76, 102, 164);
@@ -101,7 +100,7 @@ a {
 }
 
 .transition img {
-	border:1px solid white;
+	border: 1px solid white;
 	margin: 0.5em 0;
 }
 
@@ -115,18 +114,18 @@ a {
 	border-radius: 5px;
 }
 
-.twitter-grep img, .twitter-grep-fibs img {
-  margin-top: 20px;
+.twitter-grep img,.twitter-grep-fibs img {
+	margin-top: 20px;
 }
 
 .twitter-grep-fibs img {
-  width: 800px;
+	width: 800px;
 }
 
 .questions {
-  font-size: 1.4em;
-  display: block;
-  margin-top: 50px;
+	font-size: 1.4em;
+	display: block;
+	margin-top: 50px;
 }
 
 body {
@@ -135,7 +134,7 @@ body {
 }
 
 ul {
-  margin: 0.2em 0em 0.2em 0.3em; 
+	margin: 0.2em 0em 0.2em 0.3em;
 }
 
 h1,h2,h3 {
@@ -157,13 +156,12 @@ h1 {
 
 .remark-slide-content h2 {
 	font-size: 1.2em;
-  margin-bottom: 20px;
+	margin-bottom: 20px;
 }
 
 .remark-slide-content h3 {
 	font-size: 1.0em;
 }
-
 
 .slide .content {
 	padding: 10px 90px !important;
